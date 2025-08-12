@@ -1,9 +1,10 @@
 <script setup lang="ts">
-defineProps<{ modelValue: 'all' | 'fake' | 'not-fake'; perPage: number; perPageOptions: number[] }>();
+defineProps<{ modelValue: 'all' | 'fake' | 'not-fake' | 'equal'; perPage: number; perPageOptions: number[] }>()
 const options = [
   { label: 'All', value: 'all' },
   { label: 'Fake', value: 'fake' },
   { label: 'Not Fake', value: 'not-fake' },
+  { label: 'Equal', value: 'equal' },
 ] as const
 </script>
 

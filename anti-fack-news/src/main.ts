@@ -11,7 +11,8 @@ async function bootstrap() {
   app.use(router)
 
   const store = useNewsStore()
-  await store.loadData() // fallback to mocks if db.json missing
+  await store.loadData() 
+  store.hydrateLocal()
 
   app.mount('#app')
 }

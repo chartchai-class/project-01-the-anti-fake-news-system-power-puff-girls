@@ -4,18 +4,20 @@ import { useRoute } from 'vue-router'
 import { useNewsStore } from '@/stores/NewsStore'
 import Pagination from '@/components/AppPagination.vue'
 import { toVote } from '@/router/routes.ts'
+import type { NewsStatus } from '@/stores/NewsStore'
 
 const route = useRoute()
 const id = Number(route.params.id)
 
 const store = useNewsStore()
 const news = store.getNewsById(id)
-const votes = store.voteCountsByNews(id)
+const votes = computed(() => store.voteCountsByNews(id))
 
+const derived = computed<NewsStatus>(() => store.derivedStatusByNews(id))
 const commentsTop = ref<HTMLElement | null>(null)
 const page = ref(1)
 const perPage = 6
-const all = computed(() => store.commentsByNews(id))
+const all = computed(() => store.allCommentsByNews(id))
 const totalPages = computed(() => Math.max(1, Math.ceil(all.value.length / perPage)))
 const pagedComments = computed(() => {
   const start = (page.value - 1) * perPage
@@ -27,6 +29,10 @@ async function onCommentPage(v: number) {
   await nextTick()
   commentsTop.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+function clearMine() {
+  store.clearLocalComments(id)
+}
 </script>
 
 <template>
@@ -37,14 +43,28 @@ async function onCommentPage(v: number) {
     <p class="text-gray-700 mt-3">{{ news.fullDetail }}</p>
 
     <div class="mt-3 flex items-center gap-2 text-sm">
-      <span class="px-2 py-0.5 rounded-full border" :class="news.status==='fake' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'">{{ news.status==='fake' ? 'Fake' : 'Not Fake' }}</span>
+      <span
+  class="px-2 py-0.5 rounded-full border"
+  :class="
+    derived === 'fake'
+      ? 'bg-red-50 text-red-700 border-red-200'
+      : derived === 'not-fake'
+      ? 'bg-green-50 text-green-700 border-green-200'
+      : 'bg-yellow-50 text-yellow-800 border-yellow-200'
+  "
+>
+  {{ derived === 'fake' ? 'Fake' : derived === 'not-fake' ? 'Not Fake' : 'Equal' }}
+</span>
       <span class="text-gray-500">Votes → Fake: {{ votes.fake }} · Not Fake: {{ votes.notFake }}</span>
     </div>
 
     <div class="mt-6 flex items-center justify-between">
       <h3 class="text-lg font-semibold">Comments</h3>
       <RouterLink :to="toVote(id)" class="text-sm text-blue-600 hover:underline">Vote / Add Comment →</RouterLink>
+      
     </div>
+    <button @click="clearMine" class="text-xs text-gray-600 hover:underline">Clear my local comments</button>
+
 
     <ul ref="commentsTop" class="mt-2 space-y-3">
       <li v-for="c in pagedComments" :key="c.id" class="bg-white border rounded-xl p-3">

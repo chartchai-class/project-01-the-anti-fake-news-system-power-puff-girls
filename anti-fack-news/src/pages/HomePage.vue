@@ -13,8 +13,8 @@ const { route, setQuery } = useQuerySync()
 // Sync from URL on first mount
 onMounted(() => {
   const q = route.query
-  if (q.filter === 'fake' || q.filter === 'not-fake' || q.filter === 'all') {
-    store.setFilter(q.filter as any)
+  if (q.filter === 'fake' || q.filter === 'not-fake' || q.filter === 'equal' || q.filter === 'all') {
+    store.setFilter(q.filter as 'all' | 'fake' | 'not-fake' | 'equal')
   }
   const per = Number(q.perPage)
   if ([5,10,15].includes(per)) store.setPerPage(per)
