@@ -1,6 +1,5 @@
 import type { NewsItem } from '@/stores/NewsStore'
 
-// 18 items to exercise pagination
 export const mockNews: NewsItem[] = Array.from({ length: 18 }).map((_, i) => ({
   id: i + 1,
   title: `News #${i + 1}: Sample Headline About An Event`,

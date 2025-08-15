@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { NewsItem } from '@/stores/NewsStore'
 import { useNewsStore } from '@/stores/NewsStore'
-import type { NewsStatus } from '@/stores/NewsStore';
+import type { DerivedStatus } from '@/stores/NewsStore';
 import { computed } from 'vue'
 
 const props = defineProps<{ news: NewsItem }>()
 const store = useNewsStore()
-const derivedStatus = computed<NewsStatus>(() => store.derivedStatusByNews(props.news.id))
+const derivedStatus = computed<DerivedStatus>(() => store.derivedStatusByNews(props.news.id))
 const badgeClass = computed(() => {
   if (derivedStatus.value === 'fake') return 'bg-red-50 text-red-700 border-red-200'
   if (derivedStatus.value === 'not-fake') return 'bg-green-50 text-green-700 border-green-200'

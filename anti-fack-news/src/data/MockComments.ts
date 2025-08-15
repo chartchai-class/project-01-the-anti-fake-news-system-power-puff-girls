@@ -12,7 +12,6 @@ function makeComment(id: number, newsId: number, vote: 'fake' | 'not-fake'): Com
   }
 }
 
-// 60 seed comments spread across news IDs 1..10
 export const mockComments: CommentItem[] = Array.from({ length: 60 }).map((_, i) => {
   const newsId = (i % 10) + 1
   const vote = i % 2 === 0 ? 'fake' : 'not-fake'

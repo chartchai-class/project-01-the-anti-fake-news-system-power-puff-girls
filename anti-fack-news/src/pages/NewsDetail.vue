@@ -4,7 +4,8 @@ import { useRoute } from 'vue-router'
 import { useNewsStore } from '@/stores/NewsStore'
 import Pagination from '@/components/AppPagination.vue'
 import { toVote } from '@/router/routes.ts'
-import type { NewsStatus } from '@/stores/NewsStore'
+import type { DerivedStatus } from '@/stores/NewsStore'
+import { NP } from '@/plugins/nprogress'
 
 const route = useRoute()
 const id = Number(route.params.id)
@@ -13,7 +14,7 @@ const store = useNewsStore()
 const news = store.getNewsById(id)
 const votes = computed(() => store.voteCountsByNews(id))
 
-const derived = computed<NewsStatus>(() => store.derivedStatusByNews(id))
+const derived = computed<DerivedStatus>(() => store.derivedStatusByNews(id))
 const commentsTop = ref<HTMLElement | null>(null)
 const page = ref(1)
 const perPage = 6
@@ -25,13 +26,11 @@ const pagedComments = computed(() => {
 })
 
 async function onCommentPage(v: number) {
-  page.value = v
-  await nextTick()
-  commentsTop.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-function clearMine() {
-  store.clearLocalComments(id)
+  await NP.track(async () => {
+    page.value = v
+    await nextTick()
+    commentsTop.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 }
 </script>
 
@@ -60,11 +59,9 @@ function clearMine() {
 
     <div class="mt-6 flex items-center justify-between">
       <h3 class="text-lg font-semibold">Comments</h3>
-      <RouterLink :to="toVote(id)" class="text-sm text-blue-600 hover:underline">Vote / Add Comment →</RouterLink>
-      
+      <RouterLink :to="toVote(id)" class="inline-block px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm">Vote / Add Comment →</RouterLink>
+     
     </div>
-    <button @click="clearMine" class="text-xs text-gray-600 hover:underline">Clear my local comments</button>
-
 
     <ul ref="commentsTop" class="mt-2 space-y-3">
       <li v-for="c in pagedComments" :key="c.id" class="bg-white border rounded-xl p-3">

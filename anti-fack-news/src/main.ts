@@ -9,12 +9,8 @@ async function bootstrap() {
   const app = createApp(App)
   app.use(createPinia())
   app.use(router)
-
   const store = useNewsStore()
   await store.loadData() 
-  store.hydrateLocal()
-
   app.mount('#app')
 }
-
 bootstrap()

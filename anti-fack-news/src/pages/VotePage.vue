@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useNewsStore, type NewsStatus } from '@/stores/NewsStore'
+import { NP } from '@/plugins/nprogress'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,9 +16,11 @@ const text = ref('')
 const imageURL = ref<string>('')
 const author = ref('')
 
-function submit() {
-  store.addVoteAndComment(id, vote.value, text.value, imageURL.value || undefined, author.value)
-  router.push({ name: 'news-detail', params: { id } })
+async function submit() {
+  await NP.track(async () => {
+    store.addVoteAndComment(id, vote.value as NewsStatus, text.value, imageURL.value || undefined, author.value)
+    await router.push({ name: 'news-detail', params: { id } })
+  })
 }
 </script>
 
