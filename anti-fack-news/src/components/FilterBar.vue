@@ -9,9 +9,10 @@ const options = [
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
     <!-- Filter pills with sliding/jelly indicator -->
-  <div class="relative rounded-2xl bg-white p-1 shadow-sm ring-1 ring-gray-200 w-[25rem] overflow-hidden">
+  <div class="relative rounded-2xl bg-white p-0.5 sm:p-1 shadow-sm ring-1 ring-gray-200
+            w-full max-w-[22rem] sm:max-w-[25rem] overflow-hidden">
   <!-- sliding thumb -->
   <div
     class="absolute inset-1 rounded-xl shadow-sm will-change-transform pointer-events-none z-0
@@ -38,9 +39,10 @@ const options = [
       :key="opt.value"
       @click="$emit('update:filter', opt.value)"
       :aria-pressed="opt.value === modelValue"
-      class="relative z-10 flex-1 rounded-xl px-3 py-1.5 text-xs
-             transition-colors duration-200 active:scale-95
-             focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+      class="relative z-10 flex-1 rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm whitespace-nowrap
+       transition-colors duration-200 active:scale-95
+       focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+       
       :class="opt.value === modelValue ? 'text-white' : 'text-gray-700 hover:bg-gray-100'"
     >
       {{ opt.label }}
