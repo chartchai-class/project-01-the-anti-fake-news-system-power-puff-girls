@@ -5,7 +5,7 @@ import Pagination from '@/components/AppPagination.vue'
 import NewsCard from '@/components/NewsCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import { useQuerySync } from '@/utills/query'
-import { watch, onMounted, ref, computed, nextTick } from 'vue'
+import { watch, onMounted, ref, nextTick } from 'vue'
 import { NP } from '@/plugins/nprogress'
 
 const store = useNewsStore()
@@ -15,13 +15,13 @@ const { route, setQuery } = useQuerySync()
 const srMsg = ref('')
 
 // แสดงช่วงรายการในหน้านี้ (Showing X–Y of Z)
-const rangeLabel = computed(() => {
-  const start = (store.currentPage - 1) * store.perPage + 1
-  const end = Math.min(store.currentPage * store.perPage, store.filteredNews.length)
-  return store.filteredNews.length
-    ? `Showing ${start}–${end} of ${store.filteredNews.length}`
-    : ''
-})
+// const rangeLabel = computed(() => {
+//   const start = (store.currentPage - 1) * store.perPage + 1
+//   const end = Math.min(store.currentPage * store.perPage, store.filteredNews.length)
+//   return store.filteredNews.length
+//     ? `Showing ${start}–${end} of ${store.filteredNews.length}`
+//     : ''
+// })
 
 onMounted(async () => {
   const q = route.query
@@ -35,23 +35,23 @@ onMounted(async () => {
 
 })
 
-watch(() => store.filter, v => {
-  setQuery({ filter: v, page: 1 })
-  store.setPage(1)
-  srMsg.value = `Filter changed to ${v}. ${rangeLabel.value}`
-  NP.pulse()
-})
+// watch(() => store.filter, v => {
+//   setQuery({ filter: v, page: 1 })
+//   store.setPage(1)
+//   // srMsg.value = `Filter changed to ${v}. ${rangeLabel.value}`
+//   NP.pulse()
+// })
 
 watch(() => store.perPage, v => {
   setQuery({ perPage: v, page: 1 })
   store.setPage(1)
-  srMsg.value = `Items per page set to ${v}. ${rangeLabel.value}`
+  // srMsg.value = `Items per page set to ${v}. ${rangeLabel.value}`
   NP.pulse()
 })
 
 watch(() => store.currentPage, v => {
   setQuery({ page: v })
-  srMsg.value = `Page changed to ${v}. ${rangeLabel.value}`
+  // srMsg.value = `Page changed to ${v}. ${rangeLabel.value}`
 })
 
 async function onPageChange(v: number) {
@@ -90,9 +90,9 @@ function onPerPageChange(v: number) {
     <p class="sr-only" aria-live="polite">{{ srMsg }}</p>
 
     <!-- แถบสรุปจำนวน -->
-    <div v-if="store.filteredNews.length" class="mt-2 text-sm text-gray-600">
+    <!-- <div v-if="store.filteredNews.length" class="mt-2 text-sm text-gray-600">
       {{ rangeLabel }}
-    </div>
+    </div> -->
 
     <!-- Loading -->
     <div
