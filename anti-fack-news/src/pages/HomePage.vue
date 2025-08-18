@@ -5,23 +5,13 @@ import Pagination from '@/components/AppPagination.vue'
 import NewsCard from '@/components/NewsCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import { useQuerySync } from '@/utills/query'
-import { watch, onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 import { NP } from '@/plugins/nprogress'
 
 const store = useNewsStore()
-const { route, setQuery } = useQuerySync()
+const { route } = useQuerySync()
 
-// Live region สำหรับ Screen Reader
 const srMsg = ref('')
-
-// แสดงช่วงรายการในหน้านี้ (Showing X–Y of Z)
-// const rangeLabel = computed(() => {
-//   const start = (store.currentPage - 1) * store.perPage + 1
-//   const end = Math.min(store.currentPage * store.perPage, store.filteredNews.length)
-//   return store.filteredNews.length
-//     ? `Showing ${start}–${end} of ${store.filteredNews.length}`
-//     : ''
-// })
 
 onMounted(async () => {
   const q = route.query
@@ -33,25 +23,6 @@ onMounted(async () => {
   const page = Number(q.page)
   if (page > 0) store.setPage(page)
 
-})
-
-// watch(() => store.filter, v => {
-//   setQuery({ filter: v, page: 1 })
-//   store.setPage(1)
-//   // srMsg.value = `Filter changed to ${v}. ${rangeLabel.value}`
-//   NP.pulse()
-// })
-
-watch(() => store.perPage, v => {
-  setQuery({ perPage: v, page: 1 })
-  store.setPage(1)
-  // srMsg.value = `Items per page set to ${v}. ${rangeLabel.value}`
-  NP.pulse()
-})
-
-watch(() => store.currentPage, v => {
-  setQuery({ page: v })
-  // srMsg.value = `Page changed to ${v}. ${rangeLabel.value}`
 })
 
 async function onPageChange(v: number) {
@@ -77,7 +48,6 @@ function onPerPageChange(v: number) {
   <section aria-labelledby="news-list-heading">
     <h2 id="news-list-heading" class="sr-only">News list</h2>
 
-    <!-- ฟิลเตอร์ -->
     <FilterBar
       :model-value="store.filter"
       :per-page="store.perPage"
@@ -86,15 +56,8 @@ function onPerPageChange(v: number) {
       @update:perPage="onPerPageChange"
     />
 
-    <!-- Live region สำหรับ SR -->
     <p class="sr-only" aria-live="polite">{{ srMsg }}</p>
 
-    <!-- แถบสรุปจำนวน -->
-    <!-- <div v-if="store.filteredNews.length" class="mt-2 text-sm text-gray-600">
-      {{ rangeLabel }}
-    </div> -->
-
-    <!-- Loading -->
     <div
       v-if="store.isLoading"
       class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4"
@@ -104,7 +67,6 @@ function onPerPageChange(v: number) {
       <SkeletonCard v-for="i in store.perPage" :key="`sk-${i}`" />
     </div>
 
-    <!-- Error -->
     <div
       v-else-if="store.loadError"
       class="mt-6 p-4 border rounded-xl bg-red-50 text-red-700 flex items-center justify-between gap-3"
@@ -113,7 +75,6 @@ function onPerPageChange(v: number) {
       <span>Failed to load data ({{ store.loadError }}). Showing fallback data.</span>
     </div>
 
-    <!-- Empty -->
     <div
       v-else-if="!store.filteredNews.length"
       class="mt-6 p-6 border rounded-2xl bg-white text-center text-gray-600"
@@ -122,7 +83,6 @@ function onPerPageChange(v: number) {
       No news found for this filter.
     </div>
 
-    <!-- List -->
     <TransitionGroup
       v-else
       name="list"
@@ -136,7 +96,6 @@ function onPerPageChange(v: number) {
       </div>
     </TransitionGroup>
 
-    <!-- Pagination -->
     <Pagination
       class="mt-2"
       :page="store.currentPage"
@@ -148,7 +107,6 @@ function onPerPageChange(v: number) {
 </template>
 
 <style scoped>
-/* แอนิเมชันนุ่ม ๆ ตอนเปลี่ยนหน้า/กรอง */
 .list-enter-active,
 .list-leave-active {
   transition: all 220ms ease;

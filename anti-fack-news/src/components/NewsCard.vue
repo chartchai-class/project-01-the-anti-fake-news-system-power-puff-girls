@@ -44,7 +44,6 @@ const badgeClass = computed(() => {
   </span>
   <span aria-hidden="true" class="transition-transform duration-200 group-hover:translate-x-1">→</span>
 </RouterLink>
-
     </div>
   </article>
 </template>

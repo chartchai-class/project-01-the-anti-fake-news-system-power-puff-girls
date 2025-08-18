@@ -62,13 +62,6 @@ async function submit() {
     <img :src="news.imageURL" alt="news image" class="w-full max-h-80 object-cover rounded-xl border shadow-md transition-all duration-300 hover:scale-105" />
     <p class="text-gray-700 mt-4 mb-2">{{ news.fullDetail }}</p>
 
-
-<!-- แทนที่บล็อกสองอันนี้ทั้งหมด -->
-<!--
-<div class="mt-3 flex items-center gap-2 text-sm">...</div>
-<RouterLink ...>View full article →</RouterLink>
--->
-
 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
   <span
     class="px-2 py-0.5 rounded-full border font-semibold shadow"
@@ -90,7 +83,6 @@ async function submit() {
     <span class="font-bold text-green-500">Not Fake: {{ votes.notFake }}</span>
   </span>
 
-  <!-- ดันลิงก์ไปชิดขวา -->
   <RouterLink
     :to="{ name: 'news-detail', params: { id } }"
     class="ml-auto text-blue-600 hover:text-blue-800 hover:underline"
@@ -99,16 +91,12 @@ async function submit() {
   </RouterLink>
 </div>
 
-
-<!-- Card intro message -->
 <div class="mt-4 mb-4 rounded-xl px-4 py-3 bg-blue-50 text-blue-800 text-sm">
   Help verify the accuracy of this news by voting and providing reliable evidence
   (links, images, or sources). Please keep your comments respectful
   and explain your reasoning clearly.
 </div>
 
-
-    <!-- Card form -->
     <form
       class="mt-6 space-y-4 rounded-2xl p-6
              bg-gradient-to-br from-white via-white/90 to-slate-50
@@ -119,9 +107,8 @@ async function submit() {
       @submit.prevent="submit"
     >
       <label class="block text-sm font-medium" for="comment">Choose Your Verdict</label>
-      <!-- Vote -->
       <div class="mt-2 flex gap-3">
-      <!-- Fake -->
+
 <label
   class="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-sm
          transition-all font-semibold
@@ -139,9 +126,6 @@ async function submit() {
   </span>
   Fake
 </label>
-
-
-        <!-- Not Fake -->
         <label
           class="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-sm
                  transition-all font-semibold
@@ -159,8 +143,6 @@ async function submit() {
           Not Fake
         </label>
       </div>
-
-<!-- Comment -->
 <div>
   <label class="block text-sm font-medium" for="comment">Why do you think so?</label>
   <textarea
@@ -173,15 +155,10 @@ async function submit() {
     class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
            focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
   ></textarea>
-
-  <!-- Hint / helper text -->
   <p id="comment-hint" class="mt-1 text-xs text-gray-500">
     Be respectful and specific. Aim for 1–2 sentences. Include links, screenshots, or sources if possible.
   </p>
 </div>
-
-
-      <!-- Evidence URL -->
       <div>
         <label class="block text-sm font-medium">Evidence image URL (optional)</label>
         <input
@@ -192,21 +169,17 @@ async function submit() {
                  focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
         />
       </div>
-
-      <!-- Author -->
       <div>
         <label class="block text-sm font-medium">Display Name</label>
         <input
           v-model="author"
           type="text"
           required
-          placeholder="e.g., Student A"
+          placeholder="e.g., ABCD"
           class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
                  focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
         />
       </div>
-
-      <!-- Actions -->
 <div class="pt-2 flex items-center gap-3">
   <button
     :disabled="isLoading"
@@ -218,7 +191,6 @@ async function submit() {
   >
     <span v-if="!isLoading">Submit</span>
     <span v-else class="inline-flex items-center gap-2">
-      <!-- spinner -->
       <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
@@ -240,7 +212,6 @@ async function submit() {
       </p>
     </form>
 
-    <!-- Success Popup -->
 <Transition
   enter-active-class="transition duration-200 ease-out"
   enter-from-class="opacity-0 scale-95"

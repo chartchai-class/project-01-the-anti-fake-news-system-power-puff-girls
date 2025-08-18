@@ -61,7 +61,6 @@ export const useNewsStore = defineStore('news', () => {
     isLoading.value = true
     loadError.value = null
     try {
-      // 1) Try Typicode (fast timeout to avoid long bar)
       if (API_BASE) {
         const [nRes, cRes] = await Promise.all([
           fetchWithTimeout(`${API_BASE}/news`, 2000),
@@ -73,7 +72,6 @@ export const useNewsStore = defineStore('news', () => {
         return
       }
 
-      // 2) Try /public/db.json (short timeout too)
       const url = `${import.meta.env.BASE_URL}db.json`
       const res = await fetchWithTimeout(url, 1500, { cache: 'no-store' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -82,7 +80,6 @@ export const useNewsStore = defineStore('news', () => {
       news.value = json.news
       comments.value = json.comments
     } catch (err: unknown) {
-      // 3) Fall back immediately to bundled mocks (no hanging)
       news.value = [...mockNews]
       comments.value = [...mockComments]
       if (err && typeof err === 'object' && 'name' in err && (err as { name?: string }).name === 'AbortError') {
@@ -104,7 +101,6 @@ export const useNewsStore = defineStore('news', () => {
     const ids = [...news.value.map(n => n.id), ...newNews.value.map(n => n.id)]
     return ids.length ? Math.max(...ids) + 1 : 1
   }
-
 
   async function addNews(payload: Omit<NewsItem, 'id' | 'reportedAt'> & { reportedAt?: string }) {
     NP.start()

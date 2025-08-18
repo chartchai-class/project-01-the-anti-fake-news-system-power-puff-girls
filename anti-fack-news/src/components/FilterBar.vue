@@ -10,10 +10,8 @@ const options = [
 
 <template>
   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-    <!-- Filter pills with sliding/jelly indicator -->
   <div class="relative rounded-2xl bg-white p-0.5 sm:p-1 shadow-sm ring-1 ring-gray-200
             w-full max-w-[22rem] sm:max-w-[25rem] overflow-hidden">
-  <!-- sliding thumb -->
   <div
     class="absolute inset-1 rounded-xl shadow-sm will-change-transform pointer-events-none z-0
            transition-transform duration-700 ease-[cubic-bezier(.2,1.2,.3,1)]
@@ -31,8 +29,6 @@ const options = [
     }"
     aria-hidden="true"
   ></div>
-
-  <!-- buttons -->
   <div class="relative flex">
     <button
       v-for="opt in options"
@@ -49,7 +45,6 @@ const options = [
     </button>
   </div>
 </div>
-    <!-- Per page -->
     <label class="text-sm text-gray-700 flex items-center gap-2">
       Per page
       <select

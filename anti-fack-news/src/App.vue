@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-white to-green-100">
-    <!-- Navbar -->
     <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b shadow-lg">
       <nav class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
 <RouterLink
@@ -18,19 +17,11 @@
     </span>
   </span>
 </RouterLink>
-
-
-    <!-- Add News Button -->
-
       </nav>
     </header>
-
-    <!-- Main Content -->
     <main class="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
       <RouterView />
     </main>
-
-    <!-- Footer -->
     <footer class="border-t bg-white/80 py-6 mt-10">
       <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-2">
         <span class="text-sm text-gray-500">
