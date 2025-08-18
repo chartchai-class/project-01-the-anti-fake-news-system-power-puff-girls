@@ -10,22 +10,54 @@ const options = [
 
 <template>
   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-    <div class="inline-flex rounded-xl border overflow-hidden">
-      <button
-        v-for="opt in options"
-        :key="opt.value"
-        @click="$emit('update:filter', opt.value)"
-        class="px-3 py-2 text-sm hover:bg-gray-50"
-        :class="opt.value === modelValue ? 'bg-gray-100 font-medium' : ''"
-      >
-        {{ opt.label }}
-      </button>
-    </div>
+    <!-- Filter pills with sliding/jelly indicator -->
+  <div class="relative rounded-2xl bg-white p-1 shadow-sm ring-1 ring-gray-200 w-[25rem] overflow-hidden">
+  <!-- sliding thumb -->
+  <div
+    class="absolute inset-1 rounded-xl shadow-sm will-change-transform pointer-events-none z-0
+           transition-transform duration-700 ease-[cubic-bezier(.2,1.2,.3,1)]
+           motion-reduce:transition-none"
+    :class="modelValue === 'fake'
+              ? 'bg-red-600'
+              : modelValue === 'not-fake'
+                ? 'bg-green-600'
+                : modelValue === 'equal'
+                  ? 'bg-yellow-500'
+                  : 'bg-blue-600'"
+    :style="{
+      width: `calc((100% - 0.5rem) / ${options.length})`,
+      transform: `translateX(calc(${options.findIndex(o => o.value === modelValue)} * 100%))`
+    }"
+    aria-hidden="true"
+  ></div>
 
-    <label class="text-sm text-gray-600">Per page
-      <select class="ml-2 border rounded-lg px-2 py-1" :value="perPage" @change="$emit('update:perPage', Number(($event.target as HTMLSelectElement).value))">
+  <!-- buttons -->
+  <div class="relative flex">
+    <button
+      v-for="opt in options"
+      :key="opt.value"
+      @click="$emit('update:filter', opt.value)"
+      :aria-pressed="opt.value === modelValue"
+      class="relative z-10 flex-1 rounded-xl px-3 py-1.5 text-xs
+             transition-colors duration-200 active:scale-95
+             focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+      :class="opt.value === modelValue ? 'text-white' : 'text-gray-700 hover:bg-gray-100'"
+    >
+      {{ opt.label }}
+    </button>
+  </div>
+</div>
+    <!-- Per page -->
+    <label class="text-sm text-gray-700 flex items-center gap-2">
+      Per page
+      <select
+        class="rounded-xl border px-2 py-1 transition-colors duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+        :value="perPage"
+        @change="$emit('update:perPage', Number(($event.target as HTMLSelectElement).value))"
+      >
         <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
       </select>
     </label>
   </div>
 </template>
+
