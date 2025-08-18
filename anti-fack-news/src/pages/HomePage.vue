@@ -5,36 +5,64 @@ import Pagination from '@/components/AppPagination.vue'
 import NewsCard from '@/components/NewsCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import { useQuerySync } from '@/utills/query'
-import { watch, onMounted } from 'vue'
-import { nextTick } from 'vue'
+import { watch, onMounted, ref, computed, nextTick } from 'vue'
 import { NP } from '@/plugins/nprogress'
 
 const store = useNewsStore()
 const { route, setQuery } = useQuerySync()
 
-onMounted(() => {
+// Live region สำหรับ Screen Reader
+const srMsg = ref('')
+
+// แสดงช่วงรายการในหน้านี้ (Showing X–Y of Z)
+const rangeLabel = computed(() => {
+  const start = (store.currentPage - 1) * store.perPage + 1
+  const end = Math.min(store.currentPage * store.perPage, store.filteredNews.length)
+  return store.filteredNews.length
+    ? `Showing ${start}–${end} of ${store.filteredNews.length}`
+    : ''
+})
+
+onMounted(async () => {
   const q = route.query
   if (q.filter === 'fake' || q.filter === 'not-fake' || q.filter === 'equal' || q.filter === 'all') {
     store.setFilter(q.filter as 'all' | 'fake' | 'not-fake' | 'equal')
   }
   const per = Number(q.perPage)
-  if ([5,10,15].includes(per)) store.setPerPage(per)
+  if ([5, 10, 15].includes(per)) store.setPerPage(per)
   const page = Number(q.page)
   if (page > 0) store.setPage(page)
+
 })
 
-watch(() => store.filter, v => setQuery({ filter: v }))
-watch(() => store.perPage, v => setQuery({ perPage: v, page: 1 }))
-watch(() => store.currentPage, v => setQuery({ page: v }))
+watch(() => store.filter, v => {
+  setQuery({ filter: v, page: 1 })
+  store.setPage(1)
+  srMsg.value = `Filter changed to ${v}. ${rangeLabel.value}`
+  NP.pulse()
+})
+
+watch(() => store.perPage, v => {
+  setQuery({ perPage: v, page: 1 })
+  store.setPage(1)
+  srMsg.value = `Items per page set to ${v}. ${rangeLabel.value}`
+  NP.pulse()
+})
+
+watch(() => store.currentPage, v => {
+  setQuery({ page: v })
+  srMsg.value = `Page changed to ${v}. ${rangeLabel.value}`
+})
 
 async function onPageChange(v: number) {
   await NP.track(async () => {
     store.setPage(v)
-    await nextTick()        
+    await nextTick()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   })
 }
+
 function onFilterChange(v: 'all' | 'fake' | 'not-fake' | 'equal') {
-  
   store.setFilter(v)
   NP.pulse()
 }
@@ -42,42 +70,95 @@ function onPerPageChange(v: number) {
   store.setPerPage(v)
   NP.pulse()
 }
+
 </script>
 
 <template>
   <section aria-labelledby="news-list-heading">
-  
-
     <h2 id="news-list-heading" class="sr-only">News list</h2>
-    
 
+    <!-- ฟิลเตอร์ -->
     <FilterBar
       :model-value="store.filter"
       :per-page="store.perPage"
       :per-page-options="store.perPageOptions"
       @update:filter="onFilterChange"
       @update:perPage="onPerPageChange"
-      
     />
-    
 
-    <div v-if="store.isLoading" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4" role="status" aria-live="polite">
-      <SkeletonCard v-for="i in 5" :key="i" />
+    <!-- Live region สำหรับ SR -->
+    <p class="sr-only" aria-live="polite">{{ srMsg }}</p>
+
+    <!-- แถบสรุปจำนวน -->
+    <div v-if="store.filteredNews.length" class="mt-2 text-sm text-gray-600">
+      {{ rangeLabel }}
     </div>
 
-    <div v-else-if="store.loadError" class="mt-6 p-4 border rounded-xl bg-red-50 text-red-700">
-      Failed to load data ({{ store.loadError }}). Showing fallback data.
+    <!-- Loading -->
+    <div
+      v-if="store.isLoading"
+      class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4"
+      role="status"
+      aria-live="polite"
+    >
+      <SkeletonCard v-for="i in store.perPage" :key="`sk-${i}`" />
     </div>
 
-    <div v-else-if="!store.filteredNews.length" class="mt-6 p-6 border rounded-2xl bg-white text-center text-gray-600">
+    <!-- Error -->
+    <div
+      v-else-if="store.loadError"
+      class="mt-6 p-4 border rounded-xl bg-red-50 text-red-700 flex items-center justify-between gap-3"
+      role="alert"
+    >
+      <span>Failed to load data ({{ store.loadError }}). Showing fallback data.</span>
+    </div>
+
+    <!-- Empty -->
+    <div
+      v-else-if="!store.filteredNews.length"
+      class="mt-6 p-6 border rounded-2xl bg-white text-center text-gray-600"
+      role="status"
+    >
       No news found for this filter.
     </div>
 
-    <div v-else class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-      <NewsCard v-for="n in store.paginatedNews" :key="n.id" :news="n" />
-    </div>
+    <!-- List -->
+    <TransitionGroup
+      v-else
+      name="list"
+      tag="div"
+      class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4"
+      role="list"
+      aria-label="Filtered news"
+    >
+      <div v-for="n in store.paginatedNews" :key="n.id" role="listitem">
+        <NewsCard :news="n" />
+      </div>
+    </TransitionGroup>
 
-    <Pagination class="mt-2" :page="store.currentPage" :total="store.totalPages" @update:page="onPageChange" />
-    
+    <!-- Pagination -->
+    <Pagination
+      class="mt-2"
+      :page="store.currentPage"
+      :total="store.totalPages"
+      @update:page="onPageChange"
+      aria-label="Pagination"
+    />
   </section>
 </template>
+
+<style scoped>
+/* แอนิเมชันนุ่ม ๆ ตอนเปลี่ยนหน้า/กรอง */
+.list-enter-active,
+.list-leave-active {
+  transition: all 220ms ease;
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+}
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+}
+</style>
