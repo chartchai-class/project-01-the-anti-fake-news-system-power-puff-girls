@@ -21,19 +21,7 @@
 
 
     <!-- Add News Button -->
-<RouterLink
-  :to="{ name: 'submit' }"
-  class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full
-         bg-gradient-to-r from-blue-500 to-green-400 text-white font-bold shadow-lg
-         hover:scale-105 hover:from-blue-600 hover:to-green-500
-         transition-all text-sm sm:text-base"
->
-  <span class="material-symbols-outlined text-base sm:text-xl -translate-y-[1px]">add</span>
-  <!-- Mobile text -->
-  <span class="sm:hidden">Add News</span>
-  <!-- Desktop text -->
-  <span class="hidden sm:inline">Add News / Article for Verification</span>
-</RouterLink>
+
       </nav>
     </header>
 

@@ -4,7 +4,6 @@ export const ROUTE = {
   HOME: 'home',
   NEWS_DETAIL: 'news-detail',
   VOTE: 'vote',
-  SUBMIT: 'submit',
 } as const
 
 export type RouteName = typeof ROUTE[keyof typeof ROUTE]
