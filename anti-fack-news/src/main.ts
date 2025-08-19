@@ -8,11 +8,11 @@ import { inject } from '@vercel/analytics'
 
 async function bootstrap() {
   const app = createApp(App)
-  inject()
   app.use(createPinia())
   app.use(router)
   const store = useNewsStore()
   await store.loadData() 
   app.mount('#app')
+  inject()
 }
 bootstrap()
