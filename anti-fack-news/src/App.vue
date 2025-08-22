@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { RouterLink, RouterView } from 'vue-router'
+</script>
+
 <template>
   <SpeedInsights/>
   <div class="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-white to-green-100">
@@ -36,7 +40,3 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { SpeedInsights } from '@vercel/speed-insights/vue';
-import { RouterLink, RouterView } from 'vue-router'
-</script>

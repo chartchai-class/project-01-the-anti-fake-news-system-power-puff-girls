@@ -3,8 +3,9 @@ import { createPinia } from 'pinia'
 import './assets/tailwind.css'
 import App from './App.vue'
 import router from './router'
-import { useNewsStore } from '@/stores/NewsStore'
 import { inject } from '@vercel/analytics'
+import { useNewsStore } from '@/stores/NewsStore'
+
 
 async function bootstrap() {
   const app = createApp(App)
