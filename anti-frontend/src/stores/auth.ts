@@ -32,7 +32,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     currentUserName(state): string {
       if (!state.user) return ''
-      const name = [state.user.firstname, state.user.lastname,].filter(Boolean).join(' ')
+      const name = [state.user.username].filter(Boolean).join(' ')
       return name || state.user.username
     },
     isAdmin(): boolean {

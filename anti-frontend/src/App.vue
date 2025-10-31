@@ -3,19 +3,15 @@ import { RouterLink, RouterView } from 'vue-router'
 import { computed } from 'vue'
 import { SpeedInsights } from '@vercel/speed-insights/vue'
 import { useAuthStore } from './stores/auth'
-import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import { useMessageStore } from '@/stores/message'
 import { mdiAccount, mdiLogout, mdiAccountPlus, mdiLogin } from '@mdi/js'
 
-const store = useMessageStore()
 const displayName = computed(() => authStore.currentUserName)
 const profileImage = computed(() => authStore.user?.profileImage || '')
 const displayInitial = computed(() => (displayName.value ? displayName.value.charAt(0).toUpperCase() : '?'))
 const isAuthenticated = computed(() => !!authStore.user)
 const authStore = useAuthStore()
 const router = useRouter()
-const { message } = storeToRefs(store)
 
 const token = localStorage.getItem('access_token')
 const user = localStorage.getItem('user')
