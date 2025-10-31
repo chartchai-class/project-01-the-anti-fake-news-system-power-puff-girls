@@ -1,6 +1,40 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import { computed } from 'vue'
 import { SpeedInsights } from '@vercel/speed-insights/vue'
+import { useAuthStore } from './stores/auth'
+import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
+import { useMessageStore } from '@/stores/message'
+import { mdiAccount, mdiLogout, mdiAccountPlus, mdiLogin } from '@mdi/js'
+
+const store = useMessageStore()
+const displayName = computed(() => authStore.currentUserName)
+const profileImage = computed(() => authStore.user?.profileImage || '')
+const displayInitial = computed(() => (displayName.value ? displayName.value.charAt(0).toUpperCase() : '?'))
+const isAuthenticated = computed(() => !!authStore.user)
+const authStore = useAuthStore()
+const router = useRouter()
+const { message } = storeToRefs(store)
+
+const token = localStorage.getItem('access_token')
+const user = localStorage.getItem('user')
+if (token && user && user !== 'undefined' && user !== 'null') {
+  try {
+    authStore.reload(token, JSON.parse(user))
+  } catch (e) {
+    console.error("Failed to parse user data from localStorage:", e)
+    authStore.logout()
+  }
+} else {
+  authStore.logout()
+}
+
+function logout() {
+  authStore.logout()
+  router.push({ name: 'login' })
+}
+
 </script>
 
 <template>
@@ -26,7 +60,7 @@ import { SpeedInsights } from '@vercel/speed-insights/vue'
         </RouterLink>
 
         <div class="flex items-center gap-4">
-
+          <span v-if="authStore.canSubmitNews">
           <RouterLink
             :to="{ name: 'submit' }"
             class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full
@@ -35,30 +69,48 @@ import { SpeedInsights } from '@vercel/speed-insights/vue'
                     transition-all text-sm sm:text-base"
           >
             <span class="material-symbols-outlined text-base sm:text-xl -translate-y-[1px]">add</span>
-            <span >Add News</span>
+            <span>Add News</span>
           </RouterLink>
+          </span>
 
-          <router-link 
-            to="/account" 
-            class="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-600 shadow-md transition hover:bg-gray-100"
-            aria-label="Account details"
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke-width="1.5" 
-              stroke="currentColor" 
-              class="h-6 w-6"
+          <div v-if="isAuthenticated" class="flex items-center gap-3">
+            <RouterLink
+              to="/account"
+              class="flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 shadow transition hover:bg-white"
+              aria-label="Account details"
             >
-              <path 
-                stroke-linecap="round" 
-                stroke-linejoin="round" 
-                d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" 
-              />
-            </svg>
-          </router-link>
+              <span
+                v-if="profileImage"
+                class="h-8 w-8 overflow-hidden rounded-full border border-gray-200"
+              >
+                <img :src="profileImage" alt="Profile image" class="h-full w-full object-cover" />
+              </span>
+              <span
+                v-else
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-green-400 text-sm font-semibold text-white shadow"
+              >
+                {{ displayInitial }}
+              </span>
+              <span class="text-sm font-semibold text-gray-700">{{ displayName }}</span>
+            </RouterLink>
+            <button
+              type="button"
+              class="hidden sm:inline-flex items-center gap-1 text-sm text-gray-500 transition hover:text-red-500"
+              @click="logout"
+            >
+              <span class="material-symbols-outlined text-base">logout</span>
+              Sign out
+            </button>
+          </div>
 
+          <RouterLink
+            v-else
+            :to="{ name: 'login' }"
+            class="inline-flex items-center gap-2 rounded-full border border-blue-500 px-4 py-1.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-500 hover:text-white"
+          >
+            <span class="material-symbols-outlined text-base">login</span>
+            Login
+          </RouterLink>
         </div> </nav>
     </header>
 
@@ -78,4 +130,3 @@ import { SpeedInsights } from '@vercel/speed-insights/vue'
     </footer>
   </div>
 </template>
-

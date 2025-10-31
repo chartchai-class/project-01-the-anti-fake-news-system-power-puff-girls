@@ -1,34 +1,66 @@
 <script setup lang="ts">
 import Uploader from 'vue-media-upload'
-import { ref, withDefaults, defineProps, defineEmits } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useAuthStore } from '@/stores/auth.ts'
+
 interface Props {
-  modelValue?: string[]
+ modelValue?: string[]
 }
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: () => []
+ modelValue: () => []
 })
-const convertStringToMedia = (arr: string[]): any[] => {
-  return (arr || []).map((name: string) => ({ name }))
+
+const convertStringToMedia = (str: string[] | undefined): any[] => {
+ if (!Array.isArray(str) || str.length === 0) {
+   return []
+ }
+ const first = str[0]
+ return first ? [{ name: first }] : []
 }
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string[]): void
-}>()
+
+const emit = defineEmits(['update:modelValue'])
+
 const convertMediaToString = (media: any): string[] => {
-  const output: string[] = []
-  if (Array.isArray(media)) {
-    media.forEach((el: any) => {
-      if (el && typeof el.name === 'string') output.push(el.name)
-    })
-  }
-  return output
+ if (!media) {
+   return []
+ }
+ const list = Array.isArray(media) ? media : [media]
+ const first = list[0]
+ return first && first.name ? [first.name] : []
 }
-const media = ref<any[]>(convertStringToMedia(props.modelValue))
-const uploadUrl = ref<string>(import.meta.env.VITE_UPLOAD_URL as string)
+
+const media = ref(convertStringToMedia(props.modelValue))
+const uploadUrl = ref(import.meta.env.VITE_UPLOAD_URL)
+const authStore = useAuthStore()
+
+const authorizeHeader = computed(() => {
+  if (authStore.token) {
+    return {
+      Authorization: `Bearer ${authStore.token}`
+    }
+  }
+  return {}
+})
+
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    media.value = convertStringToMedia(newValue)
+  },
+  { deep: false }
+)
+
 const onChanged = (files: any) => {
-  emit('update:modelValue', convertMediaToString(files))
+  const single = convertMediaToString(files)
+  media.value = convertStringToMedia(single)
+  emit('update:modelValue', single)
 }
 </script>
 <template>
-  <Uploader :server="uploadUrl" :media="media" @change="onChanged" />
-  
+  <Uploader
+    :server="uploadUrl"
+    @change="onChanged"
+    :media="media"
+    :headers="authorizeHeader" :max="1" :multiple="false" field-name="image"
+  />
 </template>

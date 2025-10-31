@@ -1,25 +1,8 @@
 <script setup lang="ts">
-import type { NewsItem, NewsStatus } from '@/types'
-import { computed } from 'vue'
+import type { NewsItem } from '@/types'
+import NewsStatusBadge from '@/components/NewsStatusBadge.vue'
 
-const props = defineProps<{ news: NewsItem }>()
-
-// Derive status from compact comments if present; otherwise fall back to news.status
-const derivedStatus = computed<NewsStatus>(() => {
-  const comments = props.news.ownComments || []
-  if (!comments.length) return props.news.status
-  const fake = comments.filter((c) => c.vote === 'fake').length
-  const notFake = comments.filter((c) => c.vote === 'not-fake').length
-  if (fake > notFake) return 'fake'
-  if (notFake > fake) return 'not-fake'
-  return 'equal'
-})
-
-const badgeClass = computed(() => {
-  if (derivedStatus.value === 'fake') return 'bg-red-50 text-red-700 border-red-200'
-  if (derivedStatus.value === 'not-fake') return 'bg-green-50 text-green-700 border-green-200'
-  return 'bg-yellow-50 text-yellow-800 border-yellow-200'
-})
+defineProps<{ news: NewsItem }>()
 </script>
 
 <template>
@@ -33,9 +16,7 @@ const badgeClass = computed(() => {
     <div class="p-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold line-clamp-1">{{ news.title }}</h3>
-        <span :class="badgeClass" class="text-xs px-2 py-0.5 rounded-full border whitespace-nowrap">
-         {{ derivedStatus === 'fake' ? 'Fake' : derivedStatus === 'not-fake' ? 'Not Fake' : derivedStatus === 'equal' ? 'Equal' : '' }}
-        </span>
+        <NewsStatusBadge :status="news.status" :comments="news.ownComments" variant="compact" />
       </div>
       <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ news.shortDetail }}</p>
       <div class="mt-2 text-xs text-gray-500 flex items-center justify-between">

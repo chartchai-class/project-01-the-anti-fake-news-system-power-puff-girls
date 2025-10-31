@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, onMounted } from 'vue'
+import { computed, ref, nextTick, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Pagination from '@/components/AppPagination.vue'
 import { toVote } from '@/router'
-import type { NewsItem, CommentItem, NewsStatus } from '@/types'
+import type { NewsItem, CommentItem } from '@/types'
 import { NP } from '@/plugins/nprogress'
 import NewsService from '@/service/NewsService'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useMessageStore } from '@/stores/message.ts'
 import CommentService from '@/service/CommentService'
+import { normalizeStatus } from '@/utils/status'
+import NewsStatusBadge from '@/components/NewsStatusBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,13 +24,15 @@ const isAdmin = computed(() => authStore.isAdmin)
 
 onMounted(() => {
   if (!Number.isNaN(id)) {
-    NewsService.getNewsById(id).then((res) => {
+     NewsService.getNewsById(id).then((res) => {
       news.value = res.data
     }).catch(() => {
       news.value = null
     })
     CommentService.getComment().then((res) => {
-      comments.value = (res.data || []).filter((c: CommentItem) => c.newsId === id)
+      comments.value = (res.data || [])
+        .filter((c: CommentItem) => c.newsId === id)
+        .map((c) => ({ ...c, vote: normalizeStatus(c.vote) }))
     }).catch(() => {
       comments.value = []
     })
@@ -36,15 +40,10 @@ onMounted(() => {
 })
 
 const votes = computed(() => {
-  const fake = comments.value.filter((c) => c.vote === 'fake').length
-  const notFake = comments.value.filter((c) => c.vote === 'not-fake').length
+  const list = news.value?.ownComments ?? []
+  const fake = list.filter((c) => normalizeStatus(c.vote) === 'fake').length
+  const notFake = list.filter((c) => normalizeStatus(c.vote) === 'not-fake').length
   return { fake, notFake }
-})
-
-const derived = computed<NewsStatus>(() => {
-  if (votes.value.fake > votes.value.notFake) return 'fake'
-  if (votes.value.notFake > votes.value.fake) return 'not-fake'
-  return 'equal'
 })
 
 const commentsTop = ref<HTMLElement | null>(null)
@@ -66,12 +65,15 @@ function onCommentPage(v: number) {
   })
 }
 
-async function removeCurrentNews() {
+function removeCurrentNews() {
   if (!news.value) return
   try {
-    await NewsService.removeNews(news.value.id)
+    NewsService.removeNews(news.value.id)
+    showActionPopup('News removed successfully.')
     messageStore.updateMessage('News removed successfully.')
-    await router.push({ name: 'home' })
+    setTimeout(() => {
+      router.push({ name: 'home' })
+    }, 800)
   } catch (error) {
     console.error('Failed to remove news', error)
     messageStore.updateMessage('Could not remove news.')
@@ -80,16 +82,42 @@ async function removeCurrentNews() {
   }
 }
 
-async function removeCommentById(commentId: number) {
+function removeCommentById(commentId: number) {
   try {
-    await CommentService.removeComment(commentId)
+    CommentService.removeComment(commentId)
     comments.value = comments.value.filter((c) => c.id !== commentId)
+    showActionPopup('Comment removed successfully.')
   } catch (error) {
     console.error('Failed to remove comment', error)
     messageStore.updateMessage('Could not remove comment.')
     setTimeout(() => messageStore.resetMessage(), 3000)
   }
 }
+
+const actionPopupVisible = ref(false)
+const actionPopupMessage = ref('')
+
+const showActionPopup = (message: string) => {
+  actionPopupMessage.value = message
+  actionPopupVisible.value = true
+  setTimeout(() => {
+    actionPopupVisible.value = false
+  }, 1200)
+}
+
+watch(
+  () => comments.value,
+  (newComments) => {
+    if (news.value) {
+      news.value.ownComments = newComments.map((c) => ({
+        id: c.id,
+        vote: normalizeStatus(c.vote)
+      }))
+    }
+  },
+  { deep: true }
+)
+
 </script>
 <template>
   <section v-if="news" aria-labelledby="news-detail-heading" class="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen px-4 py-8 rounded-2xl shadow-lg">
@@ -110,22 +138,11 @@ async function removeCommentById(commentId: number) {
     <p class="text-gray-700 mt-4 mb-2">{{ news.fullDetail }}</p>
 
     <div class="mt-3 flex items-center gap-2 text-sm">
-      <span
-        class="px-2 py-0.5 rounded-full border font-semibold shadow"
-        :class="
-          derived === 'fake'
-            ? 'bg-red-50 text-red-700 border-red-200'
-            : derived === 'not-fake'
-            ? 'bg-green-50 text-green-700 border-green-200'
-            : 'bg-yellow-50 text-yellow-800 border-yellow-200'
-        "
-      >
-        {{ derived === 'fake' ? 'Fake' : derived === 'not-fake' ? 'Not Fake' : 'Equal' }}
-      </span>
+      <NewsStatusBadge :status="news.status" :comments="news.ownComments" />
       <span class="text-gray-500">
-        Votes
+        Votes →
         <span class="font-bold text-red-500">Fake: {{ votes.fake }}</span>
-        
+        ·
         <span class="font-bold text-green-500">Not Fake: {{ votes.notFake }}</span>
       </span>
     </div>
@@ -164,12 +181,13 @@ class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 t
   <div class="mt-2 text-xs">
     <span
       class="px-2 py-0.5 rounded-full border font-semibold"
-      :class="c.vote==='fake' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'"
+      :class="normalizeStatus(c.vote)==='fake' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'"
     >
-      {{ c.vote==='fake' ? 'Voted: Fake' : 'Voted: Not Fake' }}
+      {{ normalizeStatus(c.vote)==='fake' ? 'Voted: Fake' : 'Voted: Not Fake' }}
     </span>
   </div>
   <div class="mt-3 flex items-center justify-between text-xs">
+    
     <a
       v-if="c.imageURL"
       :href="c.imageURL"
@@ -178,6 +196,10 @@ class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 t
     >
       Evidence image
     </a>
+    
+    <p v-else >
+      <span class="text-gray-500 mr-2">No Evidence image</span>
+    </p>
     <button
       v-if="isAdmin"
       type="button"
@@ -191,6 +213,20 @@ class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 t
     </ul>
 
     <Pagination class="mt-8" :page="page" :total="totalPages" @update:page="onCommentPage" />
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="actionPopupVisible" class="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
+        <div class="pointer-events-auto rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-gray-800 shadow-xl border">
+          {{ actionPopupMessage }}
+        </div>
+      </div>
+    </Transition>
   </section>
   <p v-else class="text-center py-12 text-gray-500">News not found.</p>
 </template>

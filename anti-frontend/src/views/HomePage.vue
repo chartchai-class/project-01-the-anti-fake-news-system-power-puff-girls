@@ -9,6 +9,7 @@ import { onMounted, ref, nextTick, computed, watch } from 'vue'
 import { NP } from '@/plugins/nprogress'
 import NewsService from '@/service/NewsService'
 import type { NewsItem } from '@/types'
+import { normalizeStatus } from '@/utils/status'
 
 const { route, setQuery } = useQuerySync()
 
@@ -85,7 +86,7 @@ const filteredNews = computed(() => {
   const q = keyword.value.trim().toLowerCase()
   return newsList.value.filter((n) => {
     const matchText = !q || n.title.toLowerCase().includes(q) || n.shortDetail.toLowerCase().includes(q)
-    const matchFilter = filter.value === 'all' ? true : n.status === filter.value
+    const matchFilter = filter.value === 'all' ? true : normalizeStatus(n.status) === filter.value
     return matchText && matchFilter
   })
 })

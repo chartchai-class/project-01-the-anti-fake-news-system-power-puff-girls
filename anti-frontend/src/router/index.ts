@@ -4,23 +4,57 @@ import HomePage from '@/views/HomePage.vue'
 import NewsDetail from '@/views/NewsDetail.vue'
 import VotePage from '@/views/VotePage.vue'
 import SubmitNews from '@/views/SubmitNews.vue'
-import { ROUTE } from './routes'
+import RegisterPage from '@/views/RegisterPage.vue'
+import LoginPage from '@/views/LoginPage.vue'
 import { NP } from '@/plugins/nprogress'
+import { useAuthStore } from '@/stores/auth'
+import type { RouteLocationNamedRaw } from 'vue-router'
+
+
+// 👇 1. "เรียก" หน้า AccountPage.vue ที่เราสร้างไว้
+// (แพทริกเดาว่ามันอยู่ที่ '@/views/AccountPage.vue' เหมือนเพื่อนๆ มันนะ!)
 import AccountPage from '@/views/AccountPage.vue'
 
 const routes: RouteRecordRaw[] = [
-  { path: '/', name: ROUTE.HOME, component: HomePage },
-  { 
-    path: '/news/:id', 
-    name: ROUTE.NEWS_DETAIL, 
-    component: NewsDetail, props: true 
+  { path: '/', name: 'home', component: HomePage },
+  {
+    path: '/news/:id',
+    name: 'news-detail',
+    component: NewsDetail, props: true
   },
-  { path: '/news/:id/vote', name: ROUTE.VOTE, component: VotePage, props: true },
-  { path: '/submit', name: ROUTE.SUBMIT, component: SubmitNews },
-  { path: '/login', name: ROUTE.LOGIN, component: LoginPage },
-  { path: '/register', name: ROUTE.REGISTER, component: RegisterPage },
-  { path: '/account', name: 'account', component: AccountPage }
+  {
+    path: '/news/:id/vote',
+    name: 'vote',
+    component: VotePage,
+    props: true,
+    meta: { requiresAuth: true, allowedRoles: ['ROLE_READER', 'ROLE_MEMBER', 'ROLE_ADMIN'] }
+  },
+  {
+    path: '/submit',
+    name: 'submit',
+    component: SubmitNews,
+    meta: { requiresAuth: true, allowedRoles: ['ROLE_MEMBER', 'ROLE_ADMIN'] }
+  },
+  { path: '/login', name: 'login', component: LoginPage },
+  { path: '/register', name: 'register', component: RegisterPage },
+  {
+    path: '/account',
+    name: 'account',
+    component: AccountPage,
+    meta: { requiresAuth: true }
+  }
 ]
+
+export const toNewsDetail = (id: number): RouteLocationNamedRaw => ({
+  name: 'news-detail',
+  params: { id },
+})
+
+export const toVote = (id: number): RouteLocationNamedRaw => ({
+  name: 'vote',
+  params: { id },
+})
+
 
 const router = createRouter({
   history: createWebHistory(),
@@ -28,8 +62,22 @@ const router = createRouter({
   scrollBehavior() { return { top: 0 } },
 })
 
-router.beforeEach((_to, _from, next) => {
+router.beforeEach((to, from, next) => {
   NP.start()
+  const authStore = useAuthStore()
+  const requiresAuth = to.meta.requiresAuth
+  const allowedRoles = to.meta.allowedRoles as string[] | undefined
+
+  if (requiresAuth && !authStore.token) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+    return
+  }
+
+  if (allowedRoles && !allowedRoles.some((role) => authStore.user?.roles.includes(role))) {
+    next(from.fullPath ? from.fullPath : { name: 'home' })
+    return
+  }
+
   next()
 })
 
@@ -37,8 +85,8 @@ router.afterEach(() => {
   NP.done()
 })
 
-router.onError(() => { 
-  NP.done() 
+router.onError(() => {
+  NP.done()
 })
 
 export default router
