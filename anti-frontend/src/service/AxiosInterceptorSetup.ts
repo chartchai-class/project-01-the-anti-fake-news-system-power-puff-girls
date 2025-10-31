@@ -7,7 +7,7 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('access_token')
     if (token) {
       // Attach the token to the Authorization header
-      request.headers.Authorization = 'Bearer ' + token
+      request.headers['Authorization'] = 'Bearer ' + token
     }
     return request
   },
