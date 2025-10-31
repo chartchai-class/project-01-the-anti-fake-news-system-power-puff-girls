@@ -112,7 +112,7 @@ const submit = handleSubmit(async (formValues) => {
       router.push(toNewsDetail(data.id))
     }, 1200)
   } catch (error) {
-    errorMessage.value = 'Unable to submit news right now. Please try again.'
+    errorMessage.value = 'Unable to submit news right now. Please try again.' + error
     showErrorPopup.value = true
     setTimeout(() => {
       showErrorPopup.value = false

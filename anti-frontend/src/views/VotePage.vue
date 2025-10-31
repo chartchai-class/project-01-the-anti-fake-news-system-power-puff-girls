@@ -119,8 +119,8 @@ const submitVote = handleSubmit(async (formValues) => {
       showSuccessPopup.value = false
       router.push({ name: 'news-detail', params: { id } })
     }, 1200)
-  } catch {
-    errorMessage.value = 'Unable to submit your vote right now. Please try again.'
+  } catch (error) {
+    errorMessage.value = 'Unable to submit your vote right now. Please try again.' + error
     showErrorPopup.value = true
     setTimeout(() => {
       showErrorPopup.value = false
