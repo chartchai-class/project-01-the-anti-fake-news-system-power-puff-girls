@@ -13,7 +13,6 @@ import { normalizeStatus } from '@/utils/status'
 
 const { route, setQuery } = useQuerySync()
 
-// UI state
 const srMsg = ref('')
 const keyword = ref('')
 const filter = ref<'all' | 'fake' | 'not-fake' | 'equal'>('all')
@@ -21,7 +20,6 @@ const perPage = ref<number>(6)
 const perPageOptions = [3, 6, 9, 12]
 const currentPage = ref(1)
 
-// Data state
 const isLoading = ref(true)
 const loadError = ref<string | null>(null)
 const newsList = ref<NewsItem[]>([])
@@ -81,7 +79,6 @@ function onPerPageChange(v: number) {
   NP.pulse()
 }
 
-// Derived data and a11y message
 const filteredNews = computed(() => {
   const q = keyword.value.trim().toLowerCase()
   return newsList.value.filter((n) => {
@@ -106,7 +103,6 @@ watch([filteredNews, currentPage], () => {
 <template>
    <section aria-labelledby="news-list-heading">
     <div class="mb-4 flex flex-wrap items-start gap-3">
-      <!-- Search box -->
       <div class="w-full order-1 sm:order-2 sm:w-auto sm:ml-auto">
         <BaseInput
           v-model="searchModel"
@@ -116,7 +112,6 @@ watch([filteredNews, currentPage], () => {
           placeholder="Search..."
         />
       </div>
-      <!-- Filter bar -->
       <FilterBar
         :model-value="filter"
         :per-page="perPage"

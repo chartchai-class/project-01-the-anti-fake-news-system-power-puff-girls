@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const modelValue = defineModel() // Modern way to handle v-model
+const modelValue = defineModel() 
 interface BaseInputProps {
   label: string
 }
@@ -15,9 +15,8 @@ const props = withDefaults(defineProps<BaseInputProps>(), {
 </template>
 
 <style scoped>
-/* You may want to integrate your existing styles here for a cleaner look */
 .mb-6 {
-  margin-bottom: 1rem; /* Adjust if 'mb-6' means something else in your Tailwind config */
+  margin-bottom: 1rem;
 }
 
 label {

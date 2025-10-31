@@ -4,7 +4,6 @@ import { computed } from 'vue'
 import { SpeedInsights } from '@vercel/speed-insights/vue'
 import { useAuthStore } from './stores/auth'
 import { useRouter } from 'vue-router'
-import { mdiAccount, mdiLogout, mdiAccountPlus, mdiLogin } from '@mdi/js'
 
 const displayName = computed(() => authStore.currentUserName)
 const profileImage = computed(() => authStore.user?.profileImage || '')

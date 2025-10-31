@@ -1,56 +1,4 @@
-﻿<!-- <script setup lang="ts">
-import { ref } from 'vue'
-import InputText from '@/components/InputText.vue'
-
-const username = ref('')
-const password = ref('')
-
-// import { useRouter } from 'vue-router'
-// import { NP } from '@/plugins/nprogress'
-
-// const router = useRouter()
-
-// // form state
-// const username = ref('')
-// const password = ref('')
-
-// // ui state
-// const showPwd = ref(false)
-// const isLoading = ref(false)
-// const showPopup = ref(false)
-
-// // validation
-// const errors = ref<Record<string, string>>({})
-
-// function validate() {
-//   const e: Record<string, string> = {}
-//   if (!username.value.trim()) e.username = 'Required.'
-//   if (!password.value.trim()) e.password = 'Required.'
-//   errors.value = e
-//   return Object.keys(e).length === 0
-// }
-
-// async function submit() {
-//   if (!validate()) return
-//   isLoading.value = true
-//   await nextTick()
-
-//   await NP.track(async () => {
-//     const payload = { username: username.value }
-//     localStorage.setItem('demo.login.payload', JSON.stringify(payload))
-//     await new Promise(r => setTimeout(r, 500))
-//   })
-
-//   isLoading.value = false
-//   showPopup.value = true
-//   setTimeout(async () => {
-//     showPopup.value = false
-//     await router.push({ name: 'home' })
-//   }, 1200)
-// }
-</script> -->
-
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import InputText from '@/components/InputText.vue'
 import StatusPopup from '@/components/PopUp.vue'
 import { ref } from 'vue'
@@ -59,7 +7,6 @@ import { useForm } from 'vee-validate'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.ts'
 
-// Initialize stores and router
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -73,14 +20,12 @@ const { handleSubmit } = useForm({
   initialValues: { user: '', password: '' }
 })
 
-// UI state
 const showPwd = ref(false)
 const isLoading = ref(false)
 const showSuccessPopup = ref(false)
 const showErrorPopup = ref(false)
 const errorMessage = ref<string>('')
 
-// Submission Handler
 const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true
   try {
@@ -102,35 +47,6 @@ const onSubmit = handleSubmit(async (values) => {
   }
 })
 </script>
-
-<!-- <template>
-  <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-    <form class="space-y-6" @submit.prevent="onSubmit">
-      <div>
-        <label for="user" class="block text-sm font-medium leading-6 text-gray-900">Username</label>
-        <InputText type="text" v-model="user" placeholder="Enter username (e.g., admin)" :error="errors['user']" />
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between">
-          <label for="password" class="block text-sm font-medium leading-6 text-gray-900">Password</label>
-          <div class="text-sm">
-            <a href="#" class="font-semibold text-indigo-600 hover:text-indigo-500">Forgot password?</a>
-          </div>
-        </div>
-        <InputText type="password" v-model="password" placeholder="Enter password (e.g., admin)" :error="errors['password']" />
-      </div>
-
-      <div>
-        <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-          Sign in
-        </button>
-      </div>
-    </form>
-  </div>
-</template> -->
-
-
 
 <template>
 <section class="flex justify-center py-20 px-4 min-h-[70vh]">
@@ -220,9 +136,7 @@ const onSubmit = handleSubmit(async (values) => {
     Register here
   </RouterLink>
 </p>
-
     </div>
-
         <StatusPopup
           :visible="showSuccessPopup"
           title="Login successful!"

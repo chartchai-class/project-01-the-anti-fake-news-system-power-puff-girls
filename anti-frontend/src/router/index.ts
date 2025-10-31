@@ -9,10 +9,6 @@ import LoginPage from '@/views/LoginPage.vue'
 import { NP } from '@/plugins/nprogress'
 import { useAuthStore } from '@/stores/auth'
 import type { RouteLocationNamedRaw } from 'vue-router'
-
-
-// 👇 1. "เรียก" หน้า AccountPage.vue ที่เราสร้างไว้
-// (แพทริกเดาว่ามันอยู่ที่ '@/views/AccountPage.vue' เหมือนเพื่อนๆ มันนะ!)
 import AccountPage from '@/views/AccountPage.vue'
 
 const routes: RouteRecordRaw[] = [

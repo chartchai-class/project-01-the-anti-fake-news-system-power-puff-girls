@@ -14,7 +14,6 @@ import type { AuthUser } from '@/stores/auth'
   app.use(pinia)
   app.use(router)
 
-  // Restore auth state from localStorage if present
   const token = localStorage.getItem('access_token')
   const userStr = localStorage.getItem('user')
   if (token && userStr) {
