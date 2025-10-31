@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { CommentItem, NewsItem, NewsStatus } from '@/types'
 import CommentService from '@/service/CommentService'
 import NewsService from '@/service/NewsService'
 import ImageUpload from '@/components/ImageUpload.vue'
+import { normalizeStatus, statusLabel } from '@/utils/status'
+
 
 // const news = ref<NewsItem>({
 //   id: null,
@@ -74,11 +76,15 @@ const votes = computed(() => {
   return { fake, notFake }
 })
 
+const derivedLabel = computed(() => statusLabel(derived.value))
+
+
 const derived = computed<NewsStatus>(() => {
   if (votes.value.fake > votes.value.notFake) return 'fake'
   if (votes.value.notFake > votes.value.fake) return 'not-fake'
-  return 'equal'
+  return normalizeStatus(news.value?.status)
 })
+
 
 function submit() {
   isLoading.value = true
@@ -98,6 +104,14 @@ function submit() {
       isLoading.value = false
     })
 }
+
+
+
+watch(derived, (value) => {
+  if (news.value) {
+    news.value.status = value
+  }
+})
 
 </script>
 
@@ -130,7 +144,7 @@ function submit() {
         : 'bg-yellow-50 text-yellow-800 border-yellow-200'
     "
   >
-    {{ derived === 'fake' ? 'Fake' : derived === 'not-fake' ? 'Not Fake' : 'Equal' }}
+    {{ derivedLabel }}
   </span>
 
   <span class="text-gray-500">

@@ -19,6 +19,8 @@ export interface NewsItem {
   reporter: string
   reportedAt: string // ISO string
   imageURL: string
+  deleted?: boolean
+  deletedAt?: string
   // Optional array to support multiple uploaded images if needed by UI
   images?: string[]
   // Optional compact comments returned by backend (if present)
@@ -26,7 +28,7 @@ export interface NewsItem {
 }
 
 // Payload for creating a news item (id/comments/images handled client-side)
-export type CreateNewsPayload = Omit<NewsItem, 'id' | 'ownComments' | 'images'>
+export type CreateNewsPayload = Omit<NewsItem, 'id' | 'ownComments' | 'images' | 'deleted' | 'deletedAt'>
 
 export interface CommentItem {
   id: number
@@ -36,4 +38,10 @@ export interface CommentItem {
   vote: NewsStatus
   author: string
   createdAt: string // ISO string
+  deleted?: boolean
+  deletedAt?: string
+}
+
+export interface MessageState {
+  message: string
 }

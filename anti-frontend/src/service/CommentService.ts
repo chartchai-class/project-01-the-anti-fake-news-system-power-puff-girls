@@ -13,5 +13,11 @@ export default {
   },
   getCommentByKeyword(status: string) {
     return apiClient.get('/comments?status=' + status)
+  },
+  removeComment(id: number) {
+    return apiClient.delete(`/comments/${id}`)
+  },
+  getRemovedComments() {
+    return apiClient.get<CommentItem[]>('/admin/comments/removed')
   }
 }
