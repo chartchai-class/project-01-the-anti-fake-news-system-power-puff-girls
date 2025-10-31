@@ -54,10 +54,10 @@ const password = ref('')
 import InputText from '@/components/InputText.vue'
 import { ref } from 'vue'
 import * as yup from 'yup'
-import { useField, useForm } from 'vee-validate'
+import { useForm } from 'vee-validate'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useMessageStore } from '@/stores/message'
+import { useAuthStore } from '@/stores/auth.ts'
+import { useMessageStore } from '@/stores/message.ts'
 
 // Initialize stores and router
 const authStore = useAuthStore()
@@ -69,14 +69,10 @@ const validationSchema = yup.object({
   password: yup.string().required('The password is required')
 })
 
-const { errors, handleSubmit } = useForm({
+const { handleSubmit } = useForm({
   validationSchema,
   initialValues: { user: '', password: '' }
 })
-
-// REFACTORED: Renamed variables for simplicity (formuser -> user)
-const { value: user } = useField<string>('user')
-const { value: password } = useField<string>('password')
 
 // UI state
 const showPwd = ref(false)
@@ -92,7 +88,7 @@ const onSubmit = handleSubmit(async (values) => {
     setTimeout(() => router.push({ name: 'home' }), 800)
   } catch (e) {
     messageStore.updateMessage('could not login')
-    setTimeout(() => messageStore.updateMessage(''), 3000)
+    setTimeout(() => messageStore.updateMessage(e as string), 3000)
   } finally {
     isLoading.value = false
   }
@@ -169,14 +165,13 @@ const onSubmit = handleSubmit(async (values) => {
       >
         <div>
           <label class="block text-sm font-medium" for="username">Username</label>
-        <InputText type="text" v-model="user" placeholder="Enter username (e.g., admin)" :error="errors['user']" />
-          
+          <InputText name="user" type="text" placeholder="Enter username (e.g., admin)" />
         </div>
 
         <div>
           <label class="block text-sm font-medium" for="password">Password</label>
           <div class="mt-2 relative">
-            <InputText :type="showPwd ? 'text' : 'password'" v-model="password" placeholder="Enter password (e.g., admin)" :error="errors['password']" />
+            <InputText name="password" :type="showPwd ? 'text' : 'password'" placeholder="Enter password (e.g., admin)" />
             <button
               type="button"
               class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-xs rounded-lg
@@ -186,7 +181,6 @@ const onSubmit = handleSubmit(async (values) => {
               {{ showPwd ? 'Hide' : 'Show' }}
             </button>
           </div>
-          <p v-if="errors.password" class="mt-1 text-xs text-red-600">{{ errors.password }}</p>
         </div>
 
          <div class="pt-2 flex flex-col items-center gap-3 justify-center">
@@ -246,6 +240,3 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
   </section>
 </template>
-
-
-

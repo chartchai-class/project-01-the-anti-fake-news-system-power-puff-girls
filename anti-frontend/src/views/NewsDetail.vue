@@ -159,7 +159,7 @@ class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 t
       <button
         v-if="isAdmin"
         type="button"
-        class="ml-3 inline-flex items-center rounded-xl border border-red-400 px-3 py-1.5 text-sm font-semibold text-red-500 transition hover:bg-red-500 hover:text-white"
+        class="ml-3 inline-flex items-center rounded-xl border   px-3 py-1.5 text-sm font-semibold bg-red-500 text-white shoadow-lg hover:scale-110 transition-all hover:bg-red-600 hover:text-white"
         @click="removeCurrentNews"
       >
         Remove News
@@ -203,7 +203,7 @@ class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 t
     <button
       v-if="isAdmin"
       type="button"
-      class="inline-flex items-center rounded-lg border border-red-300 px-2 py-1 text-xs font-semibold text-red-500 transition hover:bg-red-500 hover:text-white"
+      class="inline-flex items-center rounded-lg border px-2 py-1 text-xs font-semibold bg-red-500 text-white shoadow-lg hover:scale-110 transition-all hover:bg-red-600 hover:text-white"
       @click="removeCommentById(c.id)"
     >
       Remove Comment

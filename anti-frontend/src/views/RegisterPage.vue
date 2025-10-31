@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as yup from 'yup'
-import { useForm, useField } from 'vee-validate'
+import { useForm } from 'vee-validate'
 import { useAuthStore } from '@/stores/auth'
 import { useMessageStore } from '@/stores/message'
 import InputText from '@/components/InputText.vue'
@@ -24,13 +24,17 @@ const validationSchema = yup.object({
   password: yup.string().required().min(4, 'Password must be at least 4 characters')
 })
 
-const { errors, handleSubmit } = useForm({ validationSchema })
+const { handleSubmit } = useForm({
+  validationSchema,
+  initialValues: {
+    firstname: '',
+    lastname: '',
+    username: '',
+    email: '',
+    password: ''
+  }
+})
 
-const { value: firstname } = useField<string>('firstname')
-const { value: lastname } = useField<string>('lastname')
-const { value: username } = useField<string>('username')
-const { value: email } = useField<string>('email')
-const { value: password } = useField<string>('password')
 const profileImage = ref<string[]>([])
 
 const onSubmit = handleSubmit(async (values) => {
@@ -82,30 +86,26 @@ const onSubmit = handleSubmit(async (values) => {
         <div class="grid grid-cols-1 md:grid-cols-2 md:gap-4">
           <div>
             <label class="block text-sm font-medium" for="firstname">First name</label>
-            <InputText type="text" v-model="firstname" :error="errors.firstname" />
-            <p v-if="errors.firstname" class="mt-1 text-xs text-red-600">{{ errors.firstname }}</p>
+            <InputText name="firstname" type="text" />
           </div>
 
           <div>
             <label class="block text-sm font-medium" for="lastname">Last name</label>
-            <InputText type="text" v-model="lastname" :error="errors.lastname" />
-            <p v-if="errors.lastname" class="mt-1 text-xs text-red-600">{{ errors.lastname }}</p>
+            <InputText name="lastname" type="text" />
           </div>
         </div>
 
         <!-- Username -->
         <div>
           <label class="block text-sm font-medium" for="username">Username</label>
-          <InputText type="text" v-model="username" :error="errors.username" />
-          <p v-if="errors.username" class="mt-1 text-xs text-red-600">{{ errors.username }}</p>
+          <InputText name="username" type="text" />
         </div>
 
         <!-- Email -->
         <div>
           <label class="block text-sm font-medium" for="email">Email</label>
-          <InputText type="email" v-model="email" :error="errors.email" />
+          <InputText name="email" type="email" />
           <p id="email-hint" class="mt-1 text-xs text-gray-500">We'll send a verification link.</p>
-          <p v-if="errors.email" class="mt-1 text-xs text-red-600">{{ errors.email }}</p>
         </div>
 
         <!-- Profile image -->
@@ -119,7 +119,7 @@ const onSubmit = handleSubmit(async (values) => {
         <div>
           <label class="block text-sm font-medium" for="password">Password</label>
           <div class="relative mt-2">
-            <InputText :type="showPwd ? 'text' : 'password'" v-model="password" :error="errors['password']" />
+            <InputText name="password" :type="showPwd ? 'text' : 'password'" />
             <button
               type="button"
               class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-xs rounded-lg border bg-white hover:bg-gray-50 transition"
@@ -131,7 +131,6 @@ const onSubmit = handleSubmit(async (values) => {
           <p id="pwd-hint" class="mt-1 text-xs text-gray-500">
             Use 8+ characters. Mix letters, numbers, and symbols for better security.
           </p>
-          <p v-if="errors.password" class="mt-1 text-xs text-red-600">{{ errors.password }}</p>
         </div>
 
         <!-- Actions -->

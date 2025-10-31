@@ -45,16 +45,17 @@ const options = [
     </button>
   </div>
 </div>
-    <label class="text-sm text-gray-700 flex items-center gap-2 whitespace-nowrap">
+    <label class="relative text-sm text-gray-700 flex items-center gap-2 whitespace-nowrap">
       Per page
-      <select
-        class="rounded-xl border px-2 py-1 transition-colors duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+      <div class="relative">
+        <select
+        class="appearance-none rounded-xl border bg-white text-gray-700 pr-8 pl-3 py-1 transition-colors duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
         :value="perPage"
         @change="$emit('update:perPage', Number(($event.target as HTMLSelectElement).value))"
       >
         <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
       </select>
+      </div>
     </label>
   </div>
 </template>
-
