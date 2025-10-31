@@ -1,38 +1,66 @@
 <script setup lang="ts">
-import { useNewsStore } from '@/stores/NewsStore'
 import FilterBar from '@/components/FilterBar.vue'
 import Pagination from '@/components/AppPagination.vue'
 import NewsCard from '@/components/NewsCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import { useQuerySync } from '@/utills/query'
-import { onMounted, ref, nextTick, computed } from 'vue'
+import { onMounted, ref, nextTick, computed, watch } from 'vue'
 import { NP } from '@/plugins/nprogress'
+import NewsService from '@/service/NewsService'
+import type { NewsItem } from '@/types'
 
-const store = useNewsStore()
-const { route } = useQuerySync()
-const searchModel = computed({
-  get: () => store.keyword,
-  set: (v: string) => store.setKeyword(v)
-})
+const { route, setQuery } = useQuerySync()
 
+// UI state
 const srMsg = ref('')
+const keyword = ref('')
+const filter = ref<'all' | 'fake' | 'not-fake' | 'equal'>('all')
+const perPage = ref<number>(6)
+const perPageOptions = [3, 6, 9, 12]
+const currentPage = ref(1)
+
+// Data state
+const isLoading = ref(true)
+const loadError = ref<string | null>(null)
+const newsList = ref<NewsItem[]>([])
+
+const searchModel = computed({
+  get: () => keyword.value,
+  set: (v: string) => {
+    keyword.value = v
+    currentPage.value = 1
+  }
+})
 
 onMounted(() => {
   const q = route.query
   if (q.filter === 'fake' || q.filter === 'not-fake' || q.filter === 'equal' || q.filter === 'all') {
-    store.setFilter(q.filter as 'all' | 'fake' | 'not-fake' | 'equal')
+    filter.value = q.filter as any
   }
   const per = Number(q.perPage)
-  if ([5, 10, 15].includes(per)) store.setPerPage(per)
+  if ([3, 6, 9, 12].includes(per)) perPage.value = per
   const page = Number(q.page)
-  if (page > 0) store.setPage(page)
+  if (page > 0) currentPage.value = page
 
+  isLoading.value = true
+  NewsService.getNews()
+    .then((res) => {
+      newsList.value = res.data
+    })
+    .catch((e) => {
+      loadError.value = String(e?.message || 'unknown error')
+      newsList.value = []
+    })
+    .finally(() => {
+      isLoading.value = false
+    })
 })
 
 function onPageChange(v: number) {
   return NP.track(() => {
-    store.setPage(v)
+    currentPage.value = v
+    setQuery({ page: v })
     return nextTick().then(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     })
@@ -40,13 +68,37 @@ function onPageChange(v: number) {
 }
 
 function onFilterChange(v: 'all' | 'fake' | 'not-fake' | 'equal') {
-  store.setFilter(v)
+  filter.value = v
+  currentPage.value = 1
+  setQuery({ filter: v, page: 1 })
   NP.pulse()
 }
 function onPerPageChange(v: number) {
-  store.setPerPage(v)
+  perPage.value = v
+  currentPage.value = 1
+  setQuery({ perPage: v, page: 1 })
   NP.pulse()
 }
+
+// Derived data and a11y message
+const filteredNews = computed(() => {
+  const q = keyword.value.trim().toLowerCase()
+  return newsList.value.filter((n) => {
+    const matchText = !q || n.title.toLowerCase().includes(q) || n.shortDetail.toLowerCase().includes(q)
+    const matchFilter = filter.value === 'all' ? true : n.status === filter.value
+    return matchText && matchFilter
+  })
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredNews.value.length / perPage.value)))
+const paginatedNews = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value
+  return filteredNews.value.slice(start, start + perPage.value)
+})
+
+watch([filteredNews, currentPage], () => {
+  srMsg.value = `Showing ${paginatedNews.value.length} of ${filteredNews.value.length} results`
+})
 
 </script>
 
@@ -65,9 +117,9 @@ function onPerPageChange(v: number) {
       </div>
       <!-- Filter bar -->
       <FilterBar
-        :model-value="store.filter"
-        :per-page="store.perPage"
-        :per-page-options="store.perPageOptions"
+        :model-value="filter"
+        :per-page="perPage"
+        :per-page-options="perPageOptions"
         @update:filter="onFilterChange"
         @update:perPage="onPerPageChange"
         class="w-full order-2 sm:order-1 sm:w-auto sm:flex-1"
@@ -75,24 +127,24 @@ function onPerPageChange(v: number) {
     </div>
     <p class="sr-only" aria-live="polite">{{ srMsg }}</p>
     <div
-      v-if="store.isLoading"
+      v-if="isLoading"
       class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4"
       role="status"
       aria-live="polite"
     >
-      <SkeletonCard v-for="i in store.perPage" :key="`sk-${i}`" />
+      <SkeletonCard v-for="i in perPage" :key="`sk-${i}`" />
     </div>
      
     <div
-      v-else-if="store.loadError"
+      v-else-if="loadError"
       class="mt-6 p-4 border rounded-xl bg-red-50 text-red-700 flex items-center justify-between gap-3"
       role="alert"
     >
-      <span>Failed to load data ({{ store.loadError }}). Showing fallback data.</span>
+      <span>Failed to load data ({{ loadError }}). Showing fallback data.</span>
     </div>
 
     <div
-      v-else-if="!store.filteredNews.length"
+      v-else-if="!filteredNews.length"
       class="mt-6 p-6 border rounded-2xl bg-white text-center text-gray-600"
       role="status"
     >
@@ -106,15 +158,15 @@ function onPerPageChange(v: number) {
       role="list"
       aria-label="Filtered news"
     >
-      <div v-for="n in store.paginatedNews" :key="n.id" role="listitem">
+      <div v-for="n in paginatedNews" :key="n.id" role="listitem">
         <NewsCard :news="n" />
       </div>
     </TransitionGroup>
 
     <Pagination
       class="mt-2"
-      :page="store.currentPage"
-      :total="store.totalPages"
+      :page="currentPage"
+      :total="totalPages"
       @update:page="onPageChange"
       aria-label="Pagination"
     />

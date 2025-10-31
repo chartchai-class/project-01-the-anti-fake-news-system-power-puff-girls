@@ -1,43 +1,63 @@
-<script setup lang="ts">
-import { ref } from 'vue'
+﻿<script setup lang="ts">
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useNewsStore, type NewsStatus } from '@/stores/NewsStore'
-import { NP } from '@/plugins/nprogress'
+import type { CreateNewsPayload } from '@/types'
+import NewsService from '@/service/NewsService'
+import ImageUpload from '@/components/ImageUpload.vue'
+import { toNewsDetail } from '@/router/routes'
 
-const store = useNewsStore()
+
+const news = reactive<CreateNewsPayload>({
+  title: '',
+  shortDetail: '',
+  fullDetail: '',
+  reporter: '',
+  imageURL: '',
+  reportedAt: new Date().toISOString(),
+  status: 'equal'
+})
+
 const router = useRouter()
+const imageModel = computed({
+  get: () => (news.imageURL ? [news.imageURL] : []),
+  set: (newValue: string[]) => {
+    news.imageURL = newValue.length > 0 ? newValue[0] : ''
+  }
+})
 
-const title = ref('')
-const shortDetail = ref('')
-const fullDetail = ref('')
-const reporter = ref('')
-const imageURL = ref('')
-const status = ref<NewsStatus>('not-fake')
-
-// popup state
 const isLoading = ref(false)
 const showPopup = ref(false)
+const submitError = ref<string | null>(null)
 
 async function submit() {
+  if (isLoading.value) return
   isLoading.value = true
-  await NP.track(async () => {
-    store.addNews({
-      title: title.value,
-      shortDetail: shortDetail.value,
-      fullDetail: fullDetail.value,
-      reporter: reporter.value,
-      imageURL: imageURL.value,
-      status: status.value
-    })
-  })
- 
-  isLoading.value = false
-  showPopup.value = true
-  setTimeout(async () => {
-    showPopup.value = false
-    await router.push({ name: 'home' })
-  }, 1200)
+  submitError.value = null
+
+  const reportedAt = new Date().toISOString()
+  news.reportedAt = reportedAt
+
+  const payload: CreateNewsPayload = {
+    ...news,
+    status: 'equal',
+    reportedAt,
+    imageURL: news.imageURL?.trim() ?? ''
+  }
+
+  try {
+    const { data } = await NewsService.saveNews(payload)
+    showPopup.value = true
+    setTimeout(() => {
+      showPopup.value = false
+      router.push(toNewsDetail(data.id))
+    }, 1200)
+  } catch (error) {
+    submitError.value = 'Unable to submit news right now. Please try again.'
+  } finally {
+    isLoading.value = false
+  }
 }
+
 </script>
 
 <template>
@@ -49,7 +69,7 @@ async function submit() {
         Submit News/Article
       </h2>
       <p class="text-sm text-gray-600 mt-1 text-center">
-        Your news matters. Let’s fact-check, vote, and discuss.
+        Your news matters. Letโ€s fact-check, vote, and discuss.
       </p>
 <form
   class="mt-6 space-y-4 bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
@@ -59,10 +79,10 @@ async function submit() {
   <div>
     <label class="block text-sm font-medium">Title</label>
     <input
-      v-model="title"
+      v-model="news.title"
       type="text"
       required
-      placeholder="Write a clear, specific headline…"
+      placeholder="Write a clear, specific headlineโ€ฆ"
       class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
              focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
     />
@@ -73,29 +93,29 @@ async function submit() {
   <div>
     <label class="block text-sm font-medium">Short detail</label>
     <textarea
-      v-model="shortDetail"
+      v-model="news.shortDetail"
       rows="2"
       required
-      placeholder="A quick summary (what/when/where)…"
+      placeholder="A quick summary (what/when/where)โ€ฆ"
       class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
              focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
     />
-    <p class="mt-1 text-xs text-gray-500">Tip: Keep it concise (1–2 sentences).</p>
+    <p class="mt-1 text-xs text-gray-500">Tip: Keep it concise (1โ€“2 sentences).</p>
   </div>
 
   <!-- Full detail -->
   <div>
     <label class="block text-sm font-medium">Full detail</label>
     <textarea
-      v-model="fullDetail"
+      v-model="news.fullDetail"
       rows="6"
       required
-      placeholder="Provide evidence, links, sources, and context…"
+      placeholder="Provide evidence, links, sources, and contextโ€ฆ"
       class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
              focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
     />
     <p class="mt-1 text-xs text-gray-500">
-      Tip: Add 2–3 verification points with links or screenshots.
+      Tip: Add 2โ€“3 verification points with links or screenshots.
     </p>
   </div>
 
@@ -103,7 +123,7 @@ async function submit() {
   <div>
     <label class="block text-sm font-medium">Reporter</label>
     <input
-      v-model="reporter"
+      v-model="news.reporter"
       type="text"
       required
       placeholder="Your name or source"
@@ -115,18 +135,15 @@ async function submit() {
 
   <!-- Image -->
   <div>
-    <label class="block text-sm font-medium">Image URL (optional)</label>
-    <input
-      v-model="imageURL"
-      type="url"
-      placeholder="https://example.com/image.png"
-      class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
-             focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-    />
-    <p class="mt-1 text-xs text-gray-500">
-      Optional: Link to a related image or screenshot as evidence.
-    </p>
+<label class="block text-sm font-medium">Upload Image (optional)</label>
+    <div class="mt-2">
+      <ImageUpload v-model="imageModel" />
+    </div>
   </div>
+
+  <p v-if="submitError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+    {{ submitError }}
+  </p>
 
   <!-- Actions -->
 <div class="pt-2 flex items-center gap-3 justify-center">
@@ -145,7 +162,7 @@ async function submit() {
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
       </svg>
-      Processing…
+      Processingโ€ฆ
     </span>
   </button>
   <RouterLink
@@ -182,3 +199,6 @@ async function submit() {
     </div>
   </section>
 </template>
+
+
+

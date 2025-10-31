@@ -1,47 +1,104 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useNewsStore, type NewsStatus } from '@/stores/NewsStore'
-import { NP } from '@/plugins/nprogress'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import type { CommentItem, NewsItem, NewsStatus } from '@/types'
+import CommentService from '@/service/CommentService'
+import NewsService from '@/service/NewsService'
+import ImageUpload from '@/components/ImageUpload.vue'
+
+// const news = ref<NewsItem>({
+//   id: null,
+//   title: '',
+//   shortDetail: '',
+//   fullDetail: '',
+//   reporter: '',
+//   imageURL: '',
+//   images: [],
+//   reportedAt: new Date().toISOString(),
+//   status: 'equal',
+//   ownComments: []
+// })
+
+// const router = useRouter()
+
+// // popup state
+//  const isLoading = ref(false)
+//   const showPopup = ref(false)
+
+
+
 
 const route = useRoute()
 const router = useRouter()
-const store = useNewsStore()
-
 const id = Number(route.params.id)
-const news = store.getNewsById(id)
 
-const vote = ref<NewsStatus>('fake')
-const text = ref('')
-const imageURL = ref<string>('')
-const author = ref('')
+const comment = ref<CommentItem>({
+  id: 0,
+  newsId: id,
+  vote: 'fake',
+  text: '',
+  imageURL: '',
+  author: '',
+  createdAt: new Date().toISOString()
+})
+
+const news = ref<NewsItem | null>(null)
+
+onMounted(() => {
+  if (!Number.isNaN(id)) {
+    NewsService.getNewsById(id).then((res) => {
+      news.value = res.data
+    }).catch(() => {
+      news.value = null
+    })
+  }
+})
+
+const ImageUrl = computed({
+  get() {
+    return comment.value.imageURL ? [comment.value.imageURL] : [];
+  },
+  set(newValue: string[]) {
+  
+    comment.value.imageURL = newValue.length > 0 ? newValue[0] : '';
+  }
+});
 
 const isLoading = ref(false)
 const showPopup = ref(false)
 
-const votes = computed(() => store.voteCountsByNews(id))
-const derived = computed(() => store.derivedStatusByNews(id))
+const votes = computed(() => {
+  const list = news.value?.ownComments ?? []
+  const fake = list.filter((c) => c.vote === 'fake').length
+  const notFake = list.filter((c) => c.vote === 'not-fake').length
+  return { fake, notFake }
+})
+
+const derived = computed<NewsStatus>(() => {
+  if (votes.value.fake > votes.value.notFake) return 'fake'
+  if (votes.value.notFake > votes.value.fake) return 'not-fake'
+  return 'equal'
+})
 
 function submit() {
   isLoading.value = true
-  return NP.track(() => {
-    store.addVoteAndComment(
-      id,
-      vote.value as NewsStatus,
-      text.value,
-      imageURL.value || undefined,
-      author.value
-    )
-    return Promise.resolve()
-  }).then(() => {
-    isLoading.value = false
-    showPopup.value = true
-    setTimeout(() => {
-      showPopup.value = false
-      router.push({ name: 'news-detail', params: { id } })
-    }, 1200)
-  })
+  CommentService.saveComment({ ...comment.value, newsId: id })
+    .then(() => {
+      showPopup.value = true
+      setTimeout(() => {
+        showPopup.value = false
+        router.push({ name: 'news-detail', params: { id } })
+      }, 1200)
+    })
+    .catch(() => {
+      // Silently fail to stay on page; could show an error toast
+      router.push({ name: 'network-error-view' })
+    })
+    .finally(() => {
+      isLoading.value = false
+    })
 }
+
 </script>
 
 <template>
@@ -113,14 +170,14 @@ function submit() {
   class="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-sm
          transition-all font-semibold
          hover:shadow-md hover:-translate-y-[1px]"
-  :class="vote==='fake'
+  :class="comment.vote==='fake'
     ? 'bg-red-600 text-white border-red-600 shadow'
     : 'bg-red-50 text-gray-800 border-red-200'"
 >
-  <input type="radio" value="fake" v-model="vote" class="hidden" />
+  <input type="radio" value="fake" v-model="comment.vote" class="hidden" />
   <span
     class="material-symbols-outlined text-[18px] leading-none transition-opacity"
-    :class="vote==='fake' ? 'opacity-100' : 'opacity-80 text-red-700'"
+    :class="comment.vote==='fake' ? 'opacity-100' : 'opacity-80 text-red-700'"
   >
     thumb_down
   </span>
@@ -130,15 +187,15 @@ function submit() {
           class="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-sm
                  transition-all font-semibold
                  hover:shadow-md hover:-translate-y-[1px]"
-          :class="vote==='not-fake'
+          :class="comment.vote==='not-fake'
             ? 'bg-green-600 text-white border-green-600 shadow'
             : 'bg-green-50 text-gray-800 border-green-200'"
         >
-          <input type="radio" value="not-fake" v-model="vote" class="hidden" />
+          <input type="radio" value="not-fake" v-model="comment.vote" class="hidden" />
           <span
             class="material-symbols-outlined text-[18px] leading-none
                    transition-opacity"
-            :class="vote==='not-fake' ? 'opacity-100' : 'opacity-80 text-emerald-700'"
+            :class="comment.vote==='not-fake' ? 'opacity-100' : 'opacity-80 text-emerald-700'"
           >thumb_up</span>
           Not Fake
         </label>
@@ -147,7 +204,7 @@ function submit() {
   <label class="block text-sm font-medium" for="comment">Why do you think so?</label>
   <textarea
     id="comment"
-    v-model="text"
+    v-model="comment.text"
     rows="4"
     required
     aria-describedby="comment-hint"
@@ -160,19 +217,14 @@ function submit() {
   </p>
 </div>
       <div>
-        <label class="block text-sm font-medium">Evidence image URL (optional)</label>
-        <input
-          v-model="imageURL"
-          type="url"
-          placeholder="https://..."
-          class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
-                 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-        />
+        <label class="block text-sm font-medium">Evidence Image (optional)</label>
+        <div class="mt-2"><ImageUpload v-model="ImageUrl" /></div>
+    
       </div>
       <div>
         <label class="block text-sm font-medium">Display Name</label>
         <input
-          v-model="author"
+          v-model="comment.author"
           type="text"
           required
           placeholder="e.g., ABCD"
@@ -206,10 +258,6 @@ function submit() {
     Cancel
   </RouterLink>
 </div>
-
-      <p class="text-xs text-gray-500">
-        Note: This app stores new votes/comments locally in Pinia only (mock single-page app). Reloading the page will clear them.
-      </p>
     </form>
 
 <Transition
