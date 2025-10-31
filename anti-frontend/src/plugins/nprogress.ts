@@ -34,9 +34,9 @@ function done() {
     setTimeout(end, Math.max(0, MIN_MS - DEBOUNCE_MS))
   }
 }
-async function track<T>(fn: () => Promise<T>): Promise<T> {
+function track<T>(fn: () => Promise<T>): Promise<T> {
   start()
-  try { return await fn() } finally { done() }
+  return fn().finally(() => done())
 }
 function pulse(ms = MIN_MS) {
   start()

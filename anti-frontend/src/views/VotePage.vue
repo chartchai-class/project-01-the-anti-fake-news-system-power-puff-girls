@@ -22,9 +22,9 @@ const showPopup = ref(false)
 const votes = computed(() => store.voteCountsByNews(id))
 const derived = computed(() => store.derivedStatusByNews(id))
 
-async function submit() {
+function submit() {
   isLoading.value = true
-  await NP.track(async () => {
+  return NP.track(() => {
     store.addVoteAndComment(
       id,
       vote.value as NewsStatus,
@@ -32,15 +32,15 @@ async function submit() {
       imageURL.value || undefined,
       author.value
     )
+    return Promise.resolve()
+  }).then(() => {
+    isLoading.value = false
+    showPopup.value = true
+    setTimeout(() => {
+      showPopup.value = false
+      router.push({ name: 'news-detail', params: { id } })
+    }, 1200)
   })
-
-  isLoading.value = false
-  showPopup.value = true
-
-    setTimeout(async () => {
-    showPopup.value = false
-    await router.push({ name: 'news-detail', params: { id } })
-  }, 1200)
 }
 </script>
 

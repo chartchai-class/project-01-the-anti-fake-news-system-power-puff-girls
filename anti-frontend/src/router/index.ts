@@ -1,15 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import HomePage from '@/pages/HomePage.vue'
-import NewsDetail from '@/pages/NewsDetail.vue'
-import VotePage from '@/pages/VotePage.vue'
+import HomePage from '@/views/HomePage.vue'
+import NewsDetail from '@/views/NewsDetail.vue'
+import VotePage from '@/views/VotePage.vue'
+import SubmitNews from '@/views/SubmitNews.vue'
 import { ROUTE } from './routes'
 import { NP } from '@/plugins/nprogress'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', name: ROUTE.HOME, component: HomePage },
-  { path: '/news/:id', name: ROUTE.NEWS_DETAIL, component: NewsDetail, props: true },
-  { path: '/news/:id/vote', name: ROUTE.VOTE, component: VotePage, props: true }
+  { 
+    path: '/news/:id', 
+    name: ROUTE.NEWS_DETAIL, 
+    component: NewsDetail, props: true 
+  },
+  { path: '/news/:id/vote', name: ROUTE.VOTE, component: VotePage, props: true },
+   { path: '/submit', name: ROUTE.SUBMIT, component: SubmitNews }
 ]
 
 const router = createRouter({

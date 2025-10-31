@@ -13,7 +13,7 @@ const { route } = useQuerySync()
 
 const srMsg = ref('')
 
-onMounted(async () => {
+onMounted(() => {
   const q = route.query
   if (q.filter === 'fake' || q.filter === 'not-fake' || q.filter === 'equal' || q.filter === 'all') {
     store.setFilter(q.filter as 'all' | 'fake' | 'not-fake' | 'equal')
@@ -25,11 +25,12 @@ onMounted(async () => {
 
 })
 
-async function onPageChange(v: number) {
-  await NP.track(async () => {
+function onPageChange(v: number) {
+  return NP.track(() => {
     store.setPage(v)
-    await nextTick()
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return nextTick().then(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
   })
 }
 

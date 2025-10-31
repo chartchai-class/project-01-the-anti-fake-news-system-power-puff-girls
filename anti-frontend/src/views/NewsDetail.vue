@@ -25,11 +25,12 @@ const pagedComments = computed(() => {
   return all.value.slice(start, start + perPage)
 })
 
-async function onCommentPage(v: number) {
-  await NP.track(async () => {
+function onCommentPage(v: number) {
+  return NP.track(() => {
     page.value = v
-    await nextTick()
-    commentsTop.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    return nextTick().then(() => {
+      commentsTop.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   })
 }
 </script>

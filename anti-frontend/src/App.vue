@@ -23,6 +23,20 @@ import { SpeedInsights } from '@vercel/speed-insights/vue'
     </span>
   </span>
 </RouterLink>
+
+<RouterLink
+  :to="{ name: 'submit' }"
+  class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full
+         bg-gradient-to-r from-blue-500 to-green-400 text-white font-bold shadow-lg
+         hover:scale-105 hover:from-blue-600 hover:to-green-500
+         transition-all text-sm sm:text-base"
+>
+  <span class="material-symbols-outlined text-base sm:text-xl -translate-y-[1px]">add</span>
+  <!-- Mobile text -->
+  <span class="sm:hidden">Add News</span>
+  <!-- Desktop text -->
+  <span class="hidden sm:inline">Add News</span>
+</RouterLink>
       </nav>
     </header>
     <main class="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
