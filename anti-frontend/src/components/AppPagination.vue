@@ -8,10 +8,9 @@ const props = defineProps<{ page: number; total: number }>()
        aria-label="Pagination">
     <button
       class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm
-             transition-all duration-200 transform-gpu
-             hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-sm
-             active:translate-y-0 active:scale-95
-             focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40
+             transition-all duration-200 
+             bg-gray-50
+             hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-sm
              disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       :disabled="props.page <= 1"
       @click="$emit('update:page', props.page - 1)"
@@ -31,10 +30,9 @@ const props = defineProps<{ page: number; total: number }>()
     </span>
     <button
       class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm
-             transition-all duration-200 transform-gpu
-             hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-sm
-             active:translate-y-0 active:scale-95
-             focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40
+             transition-all duration-200 
+             bg-gray-50
+             hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-sm
              disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       :disabled="props.page >= props.total"
       @click="$emit('update:page', props.page + 1)"

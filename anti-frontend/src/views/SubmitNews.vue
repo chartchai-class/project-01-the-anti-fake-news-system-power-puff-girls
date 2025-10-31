@@ -7,6 +7,7 @@ import type { CreateNewsPayload } from '@/types'
 import NewsService from '@/service/NewsService'
 import ImageUpload from '@/components/ImageUpload.vue'
 import InputText from '@/components/InputText.vue'
+import StatusPopup from '@/components/PopUp.vue'
 import { toNewsDetail } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -61,8 +62,9 @@ watch(currentUsername, (value) => {
 })
 
 const isLoading = ref(false)
-const showPopup = ref(false)
-const submitError = ref<string | null>(null)
+const showSuccessPopup = ref(false)
+const showErrorPopup = ref(false)
+const errorMessage = ref<string>('')
 
 const createTextareaClasses = (meta: FieldMeta<any>, error: Ref<string | undefined>) => {
   const base =
@@ -88,7 +90,7 @@ const hasFullDetailError = computed(
 const submit = handleSubmit(async (formValues) => {
   if (!canSubmit.value || isLoading.value) return
   isLoading.value = true
-  submitError.value = null
+  errorMessage.value = ''
 
   const reportedAt = new Date().toISOString()
 
@@ -104,13 +106,17 @@ const submit = handleSubmit(async (formValues) => {
 
   try {
     const { data } = await NewsService.saveNews(payload)
-    showPopup.value = true
+    showSuccessPopup.value = true
     setTimeout(() => {
-      showPopup.value = false
+      showSuccessPopup.value = false
       router.push(toNewsDetail(data.id))
     }, 1200)
   } catch (error) {
-    submitError.value = 'Unable to submit news right now. Please try again.' + error
+    errorMessage.value = 'Unable to submit news right now. Please try again.'
+    showErrorPopup.value = true
+    setTimeout(() => {
+      showErrorPopup.value = false
+    }, 1500)
   } finally {
     isLoading.value = false
   }
@@ -190,10 +196,6 @@ const submit = handleSubmit(async (formValues) => {
           </div>
         </div>
 
-        <p v-if="submitError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-          {{ submitError }}
-        </p>
-
         <div class="pt-2 flex items-center gap-3 justify-center">
           <button
             :disabled="isLoading"
@@ -216,27 +218,20 @@ const submit = handleSubmit(async (formValues) => {
           </RouterLink>
         </div>
 
-        <Transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="opacity-0 scale-95"
-          enter-to-class="opacity-100 scale-100"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
-        >
-          <div v-if="showPopup" class="fixed inset-0 z-50 flex items-center justify-center">
-            <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-            <div class="relative mx-4 w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
-              <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <svg class="w-7 h-7 text-green-600" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold text-gray-900">Submitted!</h3>
-              <p class="mt-1 text-sm text-gray-600">Thanks for contributing. Redirecting...</p>
-            </div>
-          </div>
-        </Transition>
+        <StatusPopup
+          :visible="showSuccessPopup"
+          title="Submitted!"
+          message="Thanks for contributing. Redirecting..."
+          variant="success"
+          @close="showSuccessPopup = false"
+        />
+        <StatusPopup
+          :visible="showErrorPopup"
+          title="Submission failed"
+          :message="errorMessage"
+          variant="error"
+          @close="showErrorPopup = false"
+        />
       </form>
     </div>
   </section>

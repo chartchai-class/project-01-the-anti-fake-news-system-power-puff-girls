@@ -8,6 +8,7 @@ import CommentService from '@/service/CommentService'
 import NewsService from '@/service/NewsService'
 import ImageUpload from '@/components/ImageUpload.vue'
 import InputText from '@/components/InputText.vue'
+import StatusPopup from '@/components/PopUp.vue'
 import { normalizeStatus } from '@/utils/status'
 import NewsStatusBadge from '@/components/NewsStatusBadge.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -88,7 +89,9 @@ const textClasses = computed(() => {
 })
 
 const isLoading = ref(false)
-const showPopup = ref(false)
+const showSuccessPopup = ref(false)
+const showErrorPopup = ref(false)
+const errorMessage = ref<string>('')
 
 const votes = computed(() => {
   const list = news.value?.ownComments ?? []
@@ -111,13 +114,17 @@ const submitVote = handleSubmit(async (formValues) => {
       createdAt: new Date().toISOString()
     }
     await CommentService.saveComment(payload)
-    showPopup.value = true
+    showSuccessPopup.value = true
     setTimeout(() => {
-      showPopup.value = false
+      showSuccessPopup.value = false
       router.push({ name: 'news-detail', params: { id } })
     }, 1200)
   } catch {
-    router.push({ name: 'network-error-view' })
+    errorMessage.value = 'Unable to submit your vote right now. Please try again.'
+    showErrorPopup.value = true
+    setTimeout(() => {
+      showErrorPopup.value = false
+    }, 1500)
   } finally {
     isLoading.value = false
   }
@@ -270,27 +277,20 @@ const submitVote = handleSubmit(async (formValues) => {
       </div>
     </form>
 
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div v-if="showPopup" class="fixed inset-0 z-50 flex items-center justify-center">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-        <div class="relative mx-4 w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
-          <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <svg class="w-7 h-7 text-green-600" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900">Vote submitted!</h3>
-          <p class="mt-1 text-sm text-gray-600">Thanks for contributing.</p>
-        </div>
-      </div>
-    </Transition>
+    <StatusPopup
+      :visible="showSuccessPopup"
+      title="Vote submitted!"
+      message="Thanks for contributing."
+      variant="success"
+      @close="showSuccessPopup = false"
+    />
+    <StatusPopup
+      :visible="showErrorPopup"
+      title="Vote failed"
+      :message="errorMessage"
+      variant="error"
+      @close="showErrorPopup = false"
+    />
   </section>
 
   <p v-else class="px-4 py-8 text-center text-gray-600">News not found.</p>

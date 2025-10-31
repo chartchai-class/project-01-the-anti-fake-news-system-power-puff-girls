@@ -11,6 +11,7 @@ import { useMessageStore } from '@/stores/message.ts'
 import CommentService from '@/service/CommentService'
 import { normalizeStatus } from '@/utils/status'
 import NewsStatusBadge from '@/components/NewsStatusBadge.vue'
+import StatusPopup from '@/components/PopUp.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -76,7 +77,11 @@ function removeCurrentNews() {
     }, 800)
   } catch (error) {
     console.error('Failed to remove news', error)
-    messageStore.updateMessage('Could not remove news.')
+    errorMessage.value = 'Could not remove news.'
+    showErrorPopup.value = true
+    setTimeout(() => {
+      showErrorPopup.value = false
+    }, 1500)
   } finally {
     setTimeout(() => messageStore.resetMessage(), 3000)
   }
@@ -89,19 +94,26 @@ function removeCommentById(commentId: number) {
     showActionPopup('Comment removed successfully.')
   } catch (error) {
     console.error('Failed to remove comment', error)
-    messageStore.updateMessage('Could not remove comment.')
-    setTimeout(() => messageStore.resetMessage(), 3000)
+    errorMessage.value = 'Could not remove comment.'
+    showErrorPopup.value = true
+    setTimeout(() => {
+      showErrorPopup.value = false
+    }, 1500)
   }
 }
 
-const actionPopupVisible = ref(false)
-const actionPopupMessage = ref('')
+const showSuccessPopup = ref(false)
+const successTitle = ref('Success')
+const successMessage = ref('')
+const showErrorPopup = ref(false)
+const errorMessage = ref('')
 
-const showActionPopup = (message: string) => {
-  actionPopupMessage.value = message
-  actionPopupVisible.value = true
+const showActionPopup = (message: string, title = 'Success') => {
+  successTitle.value = title
+  successMessage.value = message
+  showSuccessPopup.value = true
   setTimeout(() => {
-    actionPopupVisible.value = false
+    showSuccessPopup.value = false
   }, 1200)
 }
 
@@ -213,20 +225,20 @@ class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 t
     </ul>
 
     <Pagination class="mt-8" :page="page" :total="totalPages" @update:page="onCommentPage" />
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div v-if="actionPopupVisible" class="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
-        <div class="pointer-events-auto rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-gray-800 shadow-xl border">
-          {{ actionPopupMessage }}
-        </div>
-      </div>
-    </Transition>
+    <StatusPopup
+      :visible="showSuccessPopup"
+      :title="successTitle"
+      :message="successMessage"
+      variant="success"
+      @close="showSuccessPopup = false"
+    />
+    <StatusPopup
+      :visible="showErrorPopup"
+      title="Action failed"
+      :message="errorMessage"
+      variant="error"
+      @close="showErrorPopup = false"
+    />
   </section>
   <p v-else class="text-center py-12 text-gray-500">News not found.</p>
 </template>

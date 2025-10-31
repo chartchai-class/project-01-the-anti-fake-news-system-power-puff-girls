@@ -52,16 +52,15 @@ const password = ref('')
 
 <script setup lang="ts">
 import InputText from '@/components/InputText.vue'
+import StatusPopup from '@/components/PopUp.vue'
 import { ref } from 'vue'
 import * as yup from 'yup'
 import { useForm } from 'vee-validate'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.ts'
-import { useMessageStore } from '@/stores/message.ts'
 
 // Initialize stores and router
 const authStore = useAuthStore()
-const messageStore = useMessageStore()
 const router = useRouter()
 
 const validationSchema = yup.object({
@@ -77,18 +76,27 @@ const { handleSubmit } = useForm({
 // UI state
 const showPwd = ref(false)
 const isLoading = ref(false)
-const showPopup = ref(false)
+const showSuccessPopup = ref(false)
+const showErrorPopup = ref(false)
+const errorMessage = ref<string>('')
 
 // Submission Handler
 const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true
   try {
     await authStore.login(values.user, values.password)
-    showPopup.value = true
-    setTimeout(() => router.push({ name: 'home' }), 800)
-  } catch (e) {
-    messageStore.updateMessage('could not login')
-    setTimeout(() => messageStore.updateMessage(e as string), 3000)
+    showSuccessPopup.value = true
+    setTimeout(() => {
+      showSuccessPopup.value = false
+      router.push({ name: 'home' })
+    }, 800)
+  } catch (error) {
+    console.log('Login error: ', error)
+    errorMessage.value = 'Could not log in. Check your credentials.'
+    showErrorPopup.value = true
+    setTimeout(() => {
+      showErrorPopup.value = false
+    }, 1500)
   } finally {
     isLoading.value = false
   }
@@ -215,27 +223,20 @@ const onSubmit = handleSubmit(async (values) => {
 
     </div>
 
-        <Transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="opacity-0 scale-95"
-          enter-to-class="opacity-100 scale-100"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
-        >
-          <div v-if="showPopup" class="fixed inset-0 z-50 flex items-center justify-center">
-            <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-            <div class="relative mx-4 w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
-              <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <svg class="w-7 h-7 text-green-600" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold text-gray-900">Login successful!</h3>
-              <p class="mt-1 text-sm text-gray-600">Redirecting to homepage…</p>
-            </div>
-          </div>
-        </Transition>
+        <StatusPopup
+          :visible="showSuccessPopup"
+          title="Login successful!"
+          message="Redirecting to homepage…"
+          variant="success"
+          @close="showSuccessPopup = false"
+        />
+        <StatusPopup
+          :visible="showErrorPopup"
+          title="Login failed"
+          :message="errorMessage"
+          variant="error"
+          @close="showErrorPopup = false"
+        />
       </form>
     </div>
   </section>
