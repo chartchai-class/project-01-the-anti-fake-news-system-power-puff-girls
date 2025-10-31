@@ -152,7 +152,7 @@ watch(
     <div class="mt-3 flex items-center gap-2 text-sm">
       <NewsStatusBadge :status="news.status" :comments="news.ownComments" />
       <span class="text-gray-500">
-        Votes →
+        Score →
         <span class="font-bold text-red-500">Fake: {{ votes.fake }}</span>
         ·
         <span class="font-bold text-green-500">Not Fake: {{ votes.notFake }}</span>

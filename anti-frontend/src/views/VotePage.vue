@@ -162,9 +162,9 @@ const submitVote = handleSubmit(async (formValues) => {
       <NewsStatusBadge :status="news.status" :comments="news.ownComments" />
       <span class="text-gray-500">
         Votes →
-        <span class="font-bold text-red-500">Fake: {{ votes.fake }}</span>
+        <span class="font-bold text-red-500">Fake</span>
         <span class="mx-1">|</span>
-        <span class="font-bold text-green-500">Not Fake: {{ votes.notFake }}</span>
+        <span class="font-bold text-green-500">Not Fake</span>
       </span>
       <RouterLink
         :to="{ name: 'news-detail', params: { id } }"
