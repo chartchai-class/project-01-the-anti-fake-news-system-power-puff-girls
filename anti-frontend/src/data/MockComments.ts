@@ -1,4 +1,4 @@
-import type { CommentItem } from '@/stores/NewsStore'
+import type { CommentItem } from '@/types'
 
 function makeComment(id: number, newsId: number, vote: 'fake' | 'not-fake'): CommentItem {
   return {

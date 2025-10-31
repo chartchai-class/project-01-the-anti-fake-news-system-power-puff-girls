@@ -1,43 +1,55 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useNewsStore, type NewsStatus } from '@/stores/NewsStore'
-import { NP } from '@/plugins/nprogress'
+import type { NewsItem } from '@/types'
+import NewsService from '@/service/NewsService'
+import ImageUpload from '@/components/ImageUpload.vue'
 
-const store = useNewsStore()
+const news = ref<NewsItem>({
+  id: 0,
+  title: '',
+  shortDetail: '',
+  fullDetail: '',
+  reporter: '',
+  imageURL: '',
+  images: [],
+  reportedAt: new Date().toISOString(),
+  status: 'equal',
+  ownComments: []
+})
+
 const router = useRouter()
-
-const title = ref('')
-const shortDetail = ref('')
-const fullDetail = ref('')
-const reporter = ref('')
-const imageURL = ref('')
-const status = ref<NewsStatus>('not-fake')
+const ImageUrl = computed({
+  get() {
+    return news.value.imageURL ? [news.value.imageURL] : [];
+  },
+  set(newValue: string[]) {
+  
+    news.value.imageURL = newValue.length > 0 ? newValue[0] : '';
+  }
+});
 
 // popup state
-const isLoading = ref(false)
-const showPopup = ref(false)
-
-async function submit() {
-  isLoading.value = true
-  await NP.track(async () => {
-    store.addNews({
-      title: title.value,
-      shortDetail: shortDetail.value,
-      fullDetail: fullDetail.value,
-      reporter: reporter.value,
-      imageURL: imageURL.value,
-      status: status.value
-    })
-  })
+ const isLoading = ref(false)
+  const showPopup = ref(false)
+function submit() {
  
-  isLoading.value = false
+    isLoading.value = true
+    NewsService.saveNews(news.value) 
+        .then((response) => {
+            router.push({ name: 'news-detail-view', params: { id: response.data.id } })
+        })
+        .catch(() => {
+            router.push({ name: 'network-error-view' })
+        })
+          isLoading.value = false
   showPopup.value = true
-  setTimeout(async () => {
+  setTimeout(() => {
     showPopup.value = false
-    await router.push({ name: 'home' })
-  }, 1200)
+    router.push({ name: 'home' })
+  }, 3000)
 }
+ 
 </script>
 
 <template>
@@ -59,7 +71,7 @@ async function submit() {
   <div>
     <label class="block text-sm font-medium">Title</label>
     <input
-      v-model="title"
+      v-model="news.title"
       type="text"
       required
       placeholder="Write a clear, specific headline…"
@@ -73,7 +85,7 @@ async function submit() {
   <div>
     <label class="block text-sm font-medium">Short detail</label>
     <textarea
-      v-model="shortDetail"
+      v-model="news.shortDetail"
       rows="2"
       required
       placeholder="A quick summary (what/when/where)…"
@@ -87,7 +99,7 @@ async function submit() {
   <div>
     <label class="block text-sm font-medium">Full detail</label>
     <textarea
-      v-model="fullDetail"
+      v-model="news.fullDetail"
       rows="6"
       required
       placeholder="Provide evidence, links, sources, and context…"
@@ -103,7 +115,7 @@ async function submit() {
   <div>
     <label class="block text-sm font-medium">Reporter</label>
     <input
-      v-model="reporter"
+      v-model="news.reporter"
       type="text"
       required
       placeholder="Your name or source"
@@ -115,17 +127,18 @@ async function submit() {
 
   <!-- Image -->
   <div>
-    <label class="block text-sm font-medium">Image URL (optional)</label>
-    <input
-      v-model="imageURL"
+<label class="block text-sm font-medium">Upload Image (optional)</label>
+    <div class="mt-2">
+      <ImageUpload v-model="ImageUrl" />
+    </div>
+    <p class="mt-2 text-xs text-gray-500">Or paste an image URL manually:</p>   
+     <input
+      v-model="news.imageURL"
       type="url"
       placeholder="https://example.com/image.png"
       class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
              focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
     />
-    <p class="mt-1 text-xs text-gray-500">
-      Optional: Link to a related image or screenshot as evidence.
-    </p>
   </div>
 
   <!-- Actions -->

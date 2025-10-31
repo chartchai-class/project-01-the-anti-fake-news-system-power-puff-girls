@@ -1,5 +1,4 @@
-import type { NewsItem } from '@/stores/NewsStore'
-
+import type { NewsItem } from '@/types'
 export const mockNews: NewsItem[] = Array.from({ length: 18 }).map((_, i) => ({
   id: i + 1,
   title: `News #${i + 1}: Sample Headline About An Event`,

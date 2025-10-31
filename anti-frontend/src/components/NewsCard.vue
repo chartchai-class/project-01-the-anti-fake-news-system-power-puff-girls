@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import type { NewsItem } from '@/stores/NewsStore'
-import { useNewsStore } from '@/stores/NewsStore'
-import type { DerivedStatus } from '@/stores/NewsStore';
+import type { NewsItem, NewsStatus } from '@/types'
 import { computed } from 'vue'
 
 const props = defineProps<{ news: NewsItem }>()
-const store = useNewsStore()
-const derivedStatus = computed<DerivedStatus>(() => store.derivedStatusByNews(props.news.id))
+
+// Derive status from compact comments if present; otherwise fall back to news.status
+const derivedStatus = computed<NewsStatus>(() => {
+  const comments = props.news.ownComments || []
+  if (!comments.length) return props.news.status
+  const fake = comments.filter((c) => c.vote === 'fake').length
+  const notFake = comments.filter((c) => c.vote === 'not-fake').length
+  if (fake > notFake) return 'fake'
+  if (notFake > fake) return 'not-fake'
+  return 'equal'
+})
+
 const badgeClass = computed(() => {
   if (derivedStatus.value === 'fake') return 'bg-red-50 text-red-700 border-red-200'
   if (derivedStatus.value === 'not-fake') return 'bg-green-50 text-green-700 border-green-200'
-  if (derivedStatus.value === 'equal') return 'bg-yellow-50 text-yellow-800 border-yellow-200'
   return 'bg-yellow-50 text-yellow-800 border-yellow-200'
 })
 </script>
