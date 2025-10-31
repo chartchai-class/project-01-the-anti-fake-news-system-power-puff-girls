@@ -6,7 +6,6 @@ import VotePage from '@/views/VotePage.vue'
 import SubmitNews from '@/views/SubmitNews.vue'
 import { ROUTE } from './routes'
 import { NP } from '@/plugins/nprogress'
-
 import AccountPage from '@/views/AccountPage.vue'
 
 const routes: RouteRecordRaw[] = [
@@ -19,7 +18,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/news/:id/vote', name: ROUTE.VOTE, component: VotePage, props: true },
   { path: '/submit', name: ROUTE.SUBMIT, component: SubmitNews },
   { path: '/login', name: ROUTE.LOGIN, component: LoginPage },
-  { path: '/register', name: ROUTE.REGISTER, component: RegisterPage }
+  { path: '/register', name: ROUTE.REGISTER, component: RegisterPage },
+  { path: '/account', name: 'account', component: AccountPage }
 ]
 
 const router = createRouter({

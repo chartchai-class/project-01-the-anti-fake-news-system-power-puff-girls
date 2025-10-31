@@ -3,7 +3,6 @@ export type NewsStatus = 'fake' | 'not-fake' | 'equal'
 // Minimal shape for a comment reference within a news item
 export interface CommentRefInNews {
   id: number
-  newsId: number
   vote: NewsStatus
 }
 
@@ -25,6 +24,10 @@ export interface NewsItem {
   // Optional compact comments returned by backend (if present)
   ownComments?: CommentRefInNews[]
 }
+
+// Payload for creating a news item (id/comments/images handled client-side)
+export type CreateNewsPayload = Omit<NewsItem, 'id' | 'ownComments' | 'images'>
+
 export interface CommentItem {
   id: number
   newsId: number

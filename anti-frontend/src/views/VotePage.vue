@@ -90,58 +90,15 @@ function submit() {
         router.push({ name: 'news-detail', params: { id } })
       }, 1200)
     })
-    .catch((e) => {
+    .catch(() => {
       // Silently fail to stay on page; could show an error toast
-      console.error('Failed to submit comment', e)
+      router.push({ name: 'network-error-view' })
     })
     .finally(() => {
       isLoading.value = false
     })
 }
 
-
-// function submit() {
- 
-//     isLoading.value = true
-//     NewsService.saveNews(news.value) 
-//         .then((response) => {
-//             router.push({ name: 'news-detail-view', params: { id: response.data.id } })
-//         })
-//         .catch(() => {
-//             router.push({ name: 'network-error-view' })
-//         })
-//           isLoading.value = false
-//   showPopup.value = true
-//   setTimeout(() => {
-//     showPopup.value = false
-//     router.push({ name: 'home' })
-//   }, 3000)
-// }
-
-// function submit() {
-//   isLoading.value = true
-//   return NP.track(() => {
-//     const chosenImage = form.value.images[0] || form.value.imageURL || undefined
-//     store.addVoteAndComment(
-//       id,
-//       form.value.vote,
-//       form.value.text,
-//       chosenImage,
-//       form.value.author
-//     )
-//     return Promise.resolve()
-//   }).then(() => {
-//     showPopup.value = true
-//     setTimeout(() => {
-//       showPopup.value = false
-//       router.push({ name: 'news-detail', params: { id } })
-//     }, 1200)
-//   }).catch(() => {
-//     router.push({ name: 'network-error-view' })
-//   }).finally(() => {
-//     isLoading.value = false
-//   })
-// }
 </script>
 
 <template>
@@ -262,14 +219,7 @@ function submit() {
       <div>
         <label class="block text-sm font-medium">Evidence Image (optional)</label>
         <div class="mt-2"><ImageUpload v-model="ImageUrl" /></div>
-        <p class="mt-2 text-xs text-gray-500">Or paste an image URL:</p>
-        <input
-          v-model="comment.imageURL"
-          type="url"
-          placeholder="https://..."
-          class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
-                 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-        />
+    
       </div>
       <div>
         <label class="block text-sm font-medium">Display Name</label>
@@ -308,10 +258,6 @@ function submit() {
     Cancel
   </RouterLink>
 </div>
-
-      <p class="text-xs text-gray-500">
-        Note: This app stores new votes/comments locally in Pinia only (mock single-page app). Reloading the page will clear them.
-      </p>
     </form>
 
 <Transition
