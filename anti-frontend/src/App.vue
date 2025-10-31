@@ -32,10 +32,8 @@ import { SpeedInsights } from '@vercel/speed-insights/vue'
          transition-all text-sm sm:text-base"
 >
   <span class="material-symbols-outlined text-base sm:text-xl -translate-y-[1px]">add</span>
-  <!-- Mobile text -->
-  <span class="sm:hidden">Add News</span>
-  <!-- Desktop text -->
-  <span class="hidden sm:inline">Add News</span>
+  <span >Add News</span>
+
 </RouterLink>
       </nav>
     </header>

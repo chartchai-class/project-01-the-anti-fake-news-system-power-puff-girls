@@ -44,10 +44,12 @@ export const useNewsStore = defineStore('news', () => {
   const filter = ref<'all' | NewsStatus | 'equal'>('all')
   const perPage = ref<number>(perPageOptions[0])
   const currentPage = ref(1)
+  const keyword = ref('')
 
   function setFilter(f: 'all' | NewsStatus | 'equal') { filter.value = f; currentPage.value = 1 }
   function setPerPage(n: number) { perPage.value = n; currentPage.value = 1 }
   function setPage(p: number) { currentPage.value = p }
+  function setKeyword(k: string) { keyword.value = k; currentPage.value = 1 }
 
   function fetchWithTimeout(input: RequestInfo | URL, ms: number, init?: RequestInit) {
   const ctrl = new AbortController()
@@ -274,9 +276,19 @@ export const useNewsStore = defineStore('news', () => {
   }
 
   const filteredNews = computed(() => {
-    if (filter.value === 'all') return allNews.value
-    if (filter.value === 'equal') return allNews.value.filter(n => derivedStatusByNews(n.id) === 'equal')
-    return allNews.value.filter(n => derivedStatusByNews(n.id) === filter.value)
+    const q = keyword.value.trim().toLowerCase()
+    let base = allNews.value
+    if (q) {
+      base = base.filter(n =>
+        n.title.toLowerCase().includes(q) ||
+        n.shortDetail.toLowerCase().includes(q) ||
+        n.reporter.toLowerCase().includes(q) ||
+        n.status.toLowerCase().includes(q)
+      )
+    }
+    if (filter.value === 'all') return base
+    if (filter.value === 'equal') return base.filter(n => derivedStatusByNews(n.id) === 'equal')
+    return base.filter(n => derivedStatusByNews(n.id) === filter.value)
   })
 
   const paginatedNews = computed(() => {
@@ -291,9 +303,9 @@ export const useNewsStore = defineStore('news', () => {
   return {
     news, comments, newNews, newComments,
     isLoading, hasLoaded, loadError,
-    perPageOptions, filter, perPage, currentPage,
-  
-    setFilter, setPerPage, setPage,
+    perPageOptions, filter, perPage, currentPage, keyword,
+
+    setFilter, setPerPage, setPage, setKeyword,
     addNews, addVoteAndComment, loadData, 
 
     allNews, filteredNews, paginatedNews, totalPages,

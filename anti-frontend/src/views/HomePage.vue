@@ -4,12 +4,17 @@ import FilterBar from '@/components/FilterBar.vue'
 import Pagination from '@/components/AppPagination.vue'
 import NewsCard from '@/components/NewsCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
+import BaseInput from '@/components/BaseInput.vue'
 import { useQuerySync } from '@/utills/query'
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref, nextTick, computed } from 'vue'
 import { NP } from '@/plugins/nprogress'
 
 const store = useNewsStore()
 const { route } = useQuerySync()
+const searchModel = computed({
+  get: () => store.keyword,
+  set: (v: string) => store.setKeyword(v)
+})
 
 const srMsg = ref('')
 
@@ -46,19 +51,29 @@ function onPerPageChange(v: number) {
 </script>
 
 <template>
-  <section aria-labelledby="news-list-heading">
-    <h2 id="news-list-heading" class="sr-only">News list</h2>
-
-    <FilterBar
-      :model-value="store.filter"
-      :per-page="store.perPage"
-      :per-page-options="store.perPageOptions"
-      @update:filter="onFilterChange"
-      @update:perPage="onPerPageChange"
-    />
-
+   <section aria-labelledby="news-list-heading">
+    <div class="mb-4 flex flex-wrap items-start gap-3">
+      <!-- Search box -->
+      <div class="w-full order-1 sm:order-2 sm:w-auto sm:ml-auto">
+        <BaseInput
+          v-model="searchModel"
+          type="text"
+          label=" "
+          class="w-full sm:w-64"
+          placeholder="Search..."
+        />
+      </div>
+      <!-- Filter bar -->
+      <FilterBar
+        :model-value="store.filter"
+        :per-page="store.perPage"
+        :per-page-options="store.perPageOptions"
+        @update:filter="onFilterChange"
+        @update:perPage="onPerPageChange"
+        class="w-full order-2 sm:order-1 sm:w-auto sm:flex-1"
+      />
+    </div>
     <p class="sr-only" aria-live="polite">{{ srMsg }}</p>
-
     <div
       v-if="store.isLoading"
       class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4"
@@ -67,7 +82,7 @@ function onPerPageChange(v: number) {
     >
       <SkeletonCard v-for="i in store.perPage" :key="`sk-${i}`" />
     </div>
-
+     
     <div
       v-else-if="store.loadError"
       class="mt-6 p-4 border rounded-xl bg-red-50 text-red-700 flex items-center justify-between gap-3"
@@ -83,7 +98,6 @@ function onPerPageChange(v: number) {
     >
       No news found for this filter.
     </div>
-
     <TransitionGroup
       v-else
       name="list"

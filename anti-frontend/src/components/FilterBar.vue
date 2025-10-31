@@ -10,8 +10,8 @@ const options = [
 
 <template>
   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-  <div class="relative rounded-2xl bg-white p-0.5 sm:p-1 shadow-sm ring-1 ring-gray-200
-            w-full max-w-[22rem] sm:max-w-[25rem] overflow-hidden">
+    <div class="relative rounded-2xl bg-white p-0.5 sm:p-1 shadow-sm ring-1 ring-gray-200
+              w-full sm:max-w-[25rem] overflow-hidden">
   <div
     class="absolute inset-1 rounded-xl shadow-sm will-change-transform pointer-events-none z-0
            transition-transform duration-700 ease-[cubic-bezier(.2,1.2,.3,1)]
@@ -45,7 +45,7 @@ const options = [
     </button>
   </div>
 </div>
-    <label class="text-sm text-gray-700 flex items-center gap-2">
+    <label class="text-sm text-gray-700 flex items-center gap-2 whitespace-nowrap">
       Per page
       <select
         class="rounded-xl border px-2 py-1 transition-colors duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
