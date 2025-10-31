@@ -97,9 +97,16 @@ const flipCard = () => {
             </div>
           </div>
           <p class="mt-6 text-sm text-slate-400">
-            {{ voteSummaryText }}  -->  click here to vote
+            {{ voteSummaryText }} 
           </p>
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Click to flip back</span>
+           <RouterLink
+            :to="{ name: 'vote', params: { id: props.news.id } }"
+            class="mt-4 inline-flex items-center justify-center rounded-full border border-emerald-400 px-4 py-3 text-sm font-semibold uppercase tracking-wider text-emerald-300 transition hover:border-emerald-300 hover:text-emerald-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+            @click.stop
+          >
+            Click here to vote
+          </RouterLink>
+         
         </div>
       </div>
     </div>
