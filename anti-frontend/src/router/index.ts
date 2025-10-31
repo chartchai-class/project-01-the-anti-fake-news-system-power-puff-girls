@@ -4,18 +4,22 @@ import HomePage from '@/views/HomePage.vue'
 import NewsDetail from '@/views/NewsDetail.vue'
 import VotePage from '@/views/VotePage.vue'
 import SubmitNews from '@/views/SubmitNews.vue'
+import RegisterPage from '@/views/RegisterPage.vue'
+import LoginPage from '@/views/LoginPage.vue'
 import { ROUTE } from './routes'
 import { NP } from '@/plugins/nprogress'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', name: ROUTE.HOME, component: HomePage },
-  { 
-    path: '/news/:id', 
-    name: ROUTE.NEWS_DETAIL, 
-    component: NewsDetail, props: true 
+  {
+    path: '/news/:id',
+    name: ROUTE.NEWS_DETAIL,
+    component: NewsDetail, props: true
   },
   { path: '/news/:id/vote', name: ROUTE.VOTE, component: VotePage, props: true },
-   { path: '/submit', name: ROUTE.SUBMIT, component: SubmitNews }
+  { path: '/submit', name: ROUTE.SUBMIT, component: SubmitNews },
+  { path: '/login', name: ROUTE.LOGIN, component: LoginPage },
+  { path: '/register', name: ROUTE.REGISTER, component: RegisterPage }
 ]
 
 const router = createRouter({
@@ -33,8 +37,8 @@ router.afterEach(() => {
   NP.done()
 })
 
-router.onError(() => { 
-  NP.done() 
+router.onError(() => {
+  NP.done()
 })
 
 export default router

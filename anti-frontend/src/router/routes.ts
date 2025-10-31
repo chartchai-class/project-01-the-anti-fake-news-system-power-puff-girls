@@ -4,7 +4,9 @@ export const ROUTE = {
   HOME: 'home',
   NEWS_DETAIL: 'news-detail',
   VOTE: 'vote',
-    SUBMIT: 'submit'
+  SUBMIT: 'submit',
+  LOGIN: 'login',
+  REGISTER: 'register'
 } as const
 
 export type RouteName = typeof ROUTE[keyof typeof ROUTE]
@@ -18,3 +20,4 @@ export const toVote = (id: number): RouteLocationNamedRaw => ({
   name: ROUTE.VOTE,
   params: { id },
 })
+
