@@ -1,24 +1,50 @@
 <script setup lang="ts">
-import { computed, ref, nextTick } from 'vue'
+import { computed, ref, nextTick, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useNewsStore } from '@/stores/NewsStore'
 import Pagination from '@/components/AppPagination.vue'
 import { toVote } from '@/router/routes.ts'
-import type { DerivedStatus } from '@/stores/NewsStore'
+import type { NewsItem, CommentItem, NewsStatus } from '@/types'
 import { NP } from '@/plugins/nprogress'
+import NewsService from '@/service/NewsService'
+import CommentService from '@/service/CommentService'
 
 const route = useRoute()
 const id = Number(route.params.id)
 
-const store = useNewsStore()
-const news = store.getNewsById(id)
-const votes = computed(() => store.voteCountsByNews(id))
+const news = ref<NewsItem | null>(null)
+const comments = ref<CommentItem[]>([])
 
-const derived = computed<DerivedStatus>(() => store.derivedStatusByNews(id))
+onMounted(() => {
+  if (!Number.isNaN(id)) {
+    NewsService.getNewsById(id).then((res) => {
+      news.value = res.data
+    }).catch(() => {
+      news.value = null
+    })
+    CommentService.getComment().then((res) => {
+      comments.value = (res.data || []).filter((c: CommentItem) => c.newsId === id)
+    }).catch(() => {
+      comments.value = []
+    })
+  }
+})
+
+const votes = computed(() => {
+  const fake = comments.value.filter((c) => c.vote === 'fake').length
+  const notFake = comments.value.filter((c) => c.vote === 'not-fake').length
+  return { fake, notFake }
+})
+
+const derived = computed<NewsStatus>(() => {
+  if (votes.value.fake > votes.value.notFake) return 'fake'
+  if (votes.value.notFake > votes.value.fake) return 'not-fake'
+  return 'equal'
+})
+
 const commentsTop = ref<HTMLElement | null>(null)
 const page = ref(1)
 const perPage = 6
-const all = computed(() => store.allCommentsByNews(id))
+const all = computed(() => comments.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(all.value.length / perPage)))
 const pagedComments = computed(() => {
   const start = (page.value - 1) * perPage
