@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import type { CommentItem, NewsItem, NewsStatus } from '@/types'
+import type { CommentItem, NewsItem } from '@/types'
 import CommentService from '@/service/CommentService'
 import NewsService from '@/service/NewsService'
 import ImageUpload from '@/components/ImageUpload.vue'
-import { normalizeStatus, statusLabel } from '@/utils/status'
+import { normalizeStatus } from '@/utils/status'
+import NewsStatusBadge from '@/components/NewsStatusBadge.vue'
 
 
 // const news = ref<NewsItem>({
@@ -71,20 +72,10 @@ const showPopup = ref(false)
 
 const votes = computed(() => {
   const list = news.value?.ownComments ?? []
-  const fake = list.filter((c) => c.vote === 'fake').length
-  const notFake = list.filter((c) => c.vote === 'not-fake').length
+  const fake = list.filter((c) => normalizeStatus(c.vote) === 'fake').length
+  const notFake = list.filter((c) => normalizeStatus(c.vote) === 'not-fake').length
   return { fake, notFake }
 })
-
-const derivedLabel = computed(() => statusLabel(derived.value))
-
-
-const derived = computed<NewsStatus>(() => {
-  if (votes.value.fake > votes.value.notFake) return 'fake'
-  if (votes.value.notFake > votes.value.fake) return 'not-fake'
-  return normalizeStatus(news.value?.status)
-})
-
 
 function submit() {
   isLoading.value = true
@@ -104,14 +95,6 @@ function submit() {
       isLoading.value = false
     })
 }
-
-
-
-watch(derived, (value) => {
-  if (news.value) {
-    news.value.status = value
-  }
-})
 
 </script>
 
@@ -134,18 +117,7 @@ watch(derived, (value) => {
     <p class="text-gray-700 mt-4 mb-2">{{ news.fullDetail }}</p>
 
 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
-  <span
-    class="px-2 py-0.5 rounded-full border font-semibold shadow"
-    :class="
-      derived === 'fake'
-        ? 'bg-red-50 text-red-700 border-red-200'
-        : derived === 'not-fake'
-        ? 'bg-green-50 text-green-700 border-green-200'
-        : 'bg-yellow-50 text-yellow-800 border-yellow-200'
-    "
-  >
-    {{ derivedLabel }}
-  </span>
+      <NewsStatusBadge :status="news.status" :comments="news.ownComments" />
 
   <span class="text-gray-500">
     Votes →

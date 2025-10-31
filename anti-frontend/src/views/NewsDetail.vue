@@ -3,13 +3,14 @@ import { computed, ref, nextTick, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Pagination from '@/components/AppPagination.vue'
 import { toVote } from '@/router'
-import type { NewsItem, CommentItem, NewsStatus } from '@/types'
+import type { NewsItem, CommentItem } from '@/types'
 import { NP } from '@/plugins/nprogress'
 import NewsService from '@/service/NewsService'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useMessageStore } from '@/stores/message.ts'
 import CommentService from '@/service/CommentService'
-import { normalizeStatus, statusLabel } from '@/utils/status'
+import { normalizeStatus } from '@/utils/status'
+import NewsStatusBadge from '@/components/NewsStatusBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,9 +24,8 @@ const isAdmin = computed(() => authStore.isAdmin)
 
 onMounted(() => {
   if (!Number.isNaN(id)) {
-    NewsService.getNewsById(id).then((res) => {
-      const normalized = { ...res.data, status: normalizeStatus(res.data.status) }
-      news.value = normalized
+     NewsService.getNewsById(id).then((res) => {
+      news.value = res.data
     }).catch(() => {
       news.value = null
     })
@@ -40,18 +40,11 @@ onMounted(() => {
 })
 
 const votes = computed(() => {
-  const fake = comments.value.filter((c) => normalizeStatus(c.vote) === 'fake').length
-  const notFake = comments.value.filter((c) => normalizeStatus(c.vote) === 'not-fake').length
+  const list = news.value?.ownComments ?? []
+  const fake = list.filter((c) => normalizeStatus(c.vote) === 'fake').length
+  const notFake = list.filter((c) => normalizeStatus(c.vote) === 'not-fake').length
   return { fake, notFake }
 })
-
-const derived = computed<NewsStatus>(() => {
-  if (votes.value.fake > votes.value.notFake) return 'fake'
-  if (votes.value.notFake > votes.value.fake) return 'not-fake'
-  return normalizeStatus(news.value?.status)
-})
-
-const derivedLabel = computed(() => statusLabel(derived.value))
 
 const commentsTop = ref<HTMLElement | null>(null)
 const page = ref(1)
@@ -125,11 +118,6 @@ watch(
   { deep: true }
 )
 
-watch(derived, (value) => {
-  if (news.value) {
-    news.value.status = value
-  }
-})
 </script>
 <template>
   <section v-if="news" aria-labelledby="news-detail-heading" class="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen px-4 py-8 rounded-2xl shadow-lg">
@@ -150,18 +138,7 @@ watch(derived, (value) => {
     <p class="text-gray-700 mt-4 mb-2">{{ news.fullDetail }}</p>
 
     <div class="mt-3 flex items-center gap-2 text-sm">
-      <span
-        class="px-2 py-0.5 rounded-full border font-semibold shadow"
-        :class="
-          derived === 'fake'
-            ? 'bg-red-50 text-red-700 border-red-200'
-            : derived === 'not-fake'
-            ? 'bg-green-50 text-green-700 border-green-200'
-            : 'bg-yellow-50 text-yellow-800 border-yellow-200'
-        "
-      >
-        {{ derivedLabel }}
-      </span>
+      <NewsStatusBadge :status="news.status" :comments="news.ownComments" />
       <span class="text-gray-500">
         Votes →
         <span class="font-bold text-red-500">Fake: {{ votes.fake }}</span>

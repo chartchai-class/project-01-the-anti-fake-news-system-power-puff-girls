@@ -47,10 +47,7 @@ onMounted(() => {
   isLoading.value = true
   NewsService.getNews()
     .then((res) => {
-      newsList.value = res.data.map((news: NewsItem) => ({
-        ...news,
-        status: normalizeStatus(news.status)
-      }))
+      newsList.value = res.data
     })
     .catch((e) => {
       loadError.value = String(e?.message || 'unknown error')

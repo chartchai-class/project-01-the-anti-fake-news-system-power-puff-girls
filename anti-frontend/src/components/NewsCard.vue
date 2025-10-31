@@ -1,29 +1,8 @@
 <script setup lang="ts">
 import type { NewsItem } from '@/types'
-import { computed } from 'vue'
-import { normalizeStatus, statusLabel } from '@/utils/status'
+import NewsStatusBadge from '@/components/NewsStatusBadge.vue'
 
-const props = defineProps<{ news: NewsItem }>()
-
-const derivedStatus = computed(() => {
-  const comments = props.news.ownComments || []
-  if (comments.length) {
-    const fake = comments.filter((c) => normalizeStatus(c.vote) === 'fake').length
-    const notFake = comments.filter((c) => normalizeStatus(c.vote) === 'not-fake').length
-    if (fake > notFake) return 'fake'
-    if (notFake > fake) return 'not-fake'
-    return 'equal'
-  }
-  return normalizeStatus(props.news.status)
-})
-
-const badgeClass = computed(() => {
-  if (derivedStatus.value === 'fake') return 'bg-red-50 text-red-700 border-red-200'
-  if (derivedStatus.value === 'not-fake') return 'bg-green-50 text-green-700 border-green-200'
-  return 'bg-yellow-50 text-yellow-800 border-yellow-200'
-})
-
-const statusText = computed(() => statusLabel(derivedStatus.value))
+defineProps<{ news: NewsItem }>()
 </script>
 
 <template>
@@ -37,9 +16,7 @@ const statusText = computed(() => statusLabel(derivedStatus.value))
     <div class="p-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold line-clamp-1">{{ news.title }}</h3>
-        <span :class="badgeClass" class="text-xs px-2 py-0.5 rounded-full border whitespace-nowrap">
-         {{ statusText }}
-        </span>
+        <NewsStatusBadge :status="news.status" :comments="news.ownComments" variant="compact" />
       </div>
       <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ news.shortDetail }}</p>
       <div class="mt-2 text-xs text-gray-500 flex items-center justify-between">
