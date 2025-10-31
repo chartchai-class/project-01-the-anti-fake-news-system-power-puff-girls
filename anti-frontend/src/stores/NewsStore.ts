@@ -4,29 +4,10 @@ import { ref, computed } from 'vue'
 import { mockNews } from '@/data/MockNews'
 import { mockComments } from '@/data/MockComments'
 import { NP } from '@/plugins/nprogress'
+import type { CommentItem, NewsItem, NewsStatus } from '@/types'
 
-export type NewsStatus = 'fake' | 'not-fake'
-export type DerivedStatus = NewsStatus | 'equal'
-export interface NewsItem {
-  id: number
-  title: string
-  shortDetail: string
-  fullDetail: string
-  status: NewsStatus
-  reporter: string
-  reportedAt: string
-  imageURL: string
-}
-
-export interface CommentItem {
-  id: number
-  newsId: number
-  text: string
-  imageURL?: string | null
-  vote: NewsStatus
-  author: string
-  createdAt: string 
-}
+export type { NewsStatus } from '@/types'
+export type DerivedStatus = NewsStatus
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || ''
 
@@ -41,12 +22,12 @@ export const useNewsStore = defineStore('news', () => {
   const loadError = ref<string | null>(null)
 
   const perPageOptions = [6, 9, 12, 15, 18]
-  const filter = ref<'all' | NewsStatus | 'equal'>('all')
+  const filter = ref<'all' | NewsStatus>('all')
   const perPage = ref<number>(perPageOptions[0])
   const currentPage = ref(1)
   const keyword = ref('')
 
-  function setFilter(f: 'all' | NewsStatus | 'equal') { filter.value = f; currentPage.value = 1 }
+  function setFilter(f: 'all' | NewsStatus) { filter.value = f; currentPage.value = 1 }
   function setPerPage(n: number) { perPage.value = n; currentPage.value = 1 }
   function setPage(p: number) { currentPage.value = p }
   function setKeyword(k: string) { keyword.value = k; currentPage.value = 1 }

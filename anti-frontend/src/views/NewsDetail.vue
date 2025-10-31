@@ -33,7 +33,7 @@ onMounted(() => {
     CommentService.getComment().then((res) => {
       comments.value = (res.data || [])
         .filter((c: CommentItem) => c.newsId === id)
-        .map((c) => ({ ...c, vote: normalizeStatus(c.vote) }))
+        .map((c: CommentItem) => ({ ...c, vote: normalizeStatus(c.vote) }))
     }).catch(() => {
       comments.value = []
     })
