@@ -1,164 +1,255 @@
-<script setup lang="ts">
-import { ref } from 'vue'
+﻿<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore, type AuthUser } from '@/stores/auth'
+import { useMessageStore } from '@/stores/message'
+import NewsService from '@/service/NewsService'
+import CommentService from '@/service/CommentService'
+import type { NewsItem, CommentItem } from '@/types'
 
-// --- "สมอง" ของหน้า ---
+const authStore = useAuthStore()
+const messageStore = useMessageStore()
+const router = useRouter()
 
-// 1. ตัวสลับโหมด "แก้ไข"
-const isEditing = ref(false)
+const currentUser = computed(() => authStore.user)
+const isAdmin = computed(() => authStore.isAdmin)
+const profileImage = computed(() => currentUser.value?.profileImage || '')
 
-// 2. ข้อมูลของนาย
-const name = ref('Your name') // (ชื่อ)
-const nickname = ref('Your Nickname') // (ชื่อเล่น)
-const email = ref('Your@socialfact.com') // (อีเมล)
+const users = ref<AuthUser[]>([])
+const isLoadingUsers = ref(false)
+const promoteBusy = ref<number | null>(null)
+const removedNews = ref<NewsItem[]>([])
+const removedComments = ref<CommentItem[]>([])
+const isLoadingRemoved = ref(false)
 
-// 3. URL รูปโปรไฟล์
-const profileImageUrl = ref<string | null>(null)
+const roleLabels: Record<string, string> = {
+  ROLE_READER: 'Reader',
+  ROLE_MEMBER: 'Member',
+  ROLE_ADMIN: 'Admin'
+}
 
-// 4. ฟังก์ชันตอนกด "Edit" หรือ "Save"
-function handleEditClick() {
-  if (isEditing.value) {
-    // --- กำลังจะกด "Save" ---
-    console.log('กำลังเซฟข้อมูลใหม่:')
-    console.log('Name:', name.value)
-    console.log('Nickname:', nickname.value)
+const describeRoles = (roles?: string[]) =>
+  roles && roles.length ? roles.map((role) => roleLabels[role] ?? role).join(', ') : '—'
+
+const managedUsers = computed(() =>
+  users.value.filter((user) => user.id !== currentUser.value?.id)
+)
+
+const loadUsers = async () => {
+  if (!isAdmin.value) return
+  isLoadingUsers.value = true
+  try {
+    const { data } = await authStore.fetchUsers()
+    users.value = data
+  } catch (error) {
+    console.error(error)
+    messageStore.updateMessage('Unable to load users.')
+    setTimeout(() => messageStore.resetMessage(), 3000)
+  } finally {
+    isLoadingUsers.value = false
   }
-  isEditing.value = !isEditing.value
 }
 
-// 5. ฟังก์ชันตอน "เลือกรูป"
-function onFileChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files[0]) {
-    const file = target.files[0]
-    profileImageUrl.value = URL.createObjectURL(file)
-    console.log('กำลังอัปโหลดไฟล์:', file.name)
+onMounted(() => {
+  if (isAdmin.value) {
+    loadUsers()
+    loadRemoved()
+  }
+})
+
+const logout = () => {
+  authStore.logout()
+  router.push({ name: 'login' })
+}
+
+const promoteToMember = async (userId: number) => {
+  promoteBusy.value = userId
+  try {
+    await authStore.promoteUser(userId, 'ROLE_MEMBER')
+    messageStore.updateMessage('User promoted to member.')
+    await loadUsers()
+  } catch (error) {
+    console.error(error)
+    messageStore.updateMessage('Unable to update user role.')
+  } finally {
+    setTimeout(() => messageStore.resetMessage(), 3000)
+    promoteBusy.value = null
   }
 }
 
-// 6. "ฟังก์ชัน" สำหรับปุ่ม Logout
-function handleLogout() {
-  // (ปกติ... ตรงนี้เราจะลบ "ตั๋ว" (token)
-  // แล้วก็ "วาร์ป" กลับไปหน้า Login น่ะ!)
-  console.log('กำลัง Logout!')
-  alert('บ๊ายบาย! ไว้เจอกันใหม่นะ! 👋')
+const loadRemoved = async () => {
+  if (!isAdmin.value) return
+  isLoadingRemoved.value = true
+  try {
+    const [newsRes, commentsRes] = await Promise.all([
+      NewsService.getRemovedNews(),
+      CommentService.getRemovedComments()
+    ])
+    removedNews.value = newsRes.data
+    removedComments.value = commentsRes.data
+  } catch (error) {
+    console.error(error)
+    messageStore.updateMessage('Unable to load removed items.')
+    setTimeout(() => messageStore.resetMessage(), 3000)
+  } finally {
+    isLoadingRemoved.value = false
+  }
 }
 
+const formatDate = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+  return date.toLocaleString()
+}
 </script>
 
 <template>
-  <div class="flex w-full justify-center">
-    
-    <div class="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
-      
-      <h1 class="mb-6 text-center text-3xl font-bold text-gray-800">
-        Account Details
-      </h1>
-
-      <div class="mb-6 flex flex-col items-center">
-        <div class="relative">
-          <img 
-            :src="profileImageUrl || 'https://via.placeholder.com/150/EEEEEE/999999?text=Upload'" 
-            alt="Profile picture" 
-            class="h-32 w-32 rounded-full object-cover shadow-inner"
-          />
-          <label 
-            for="profileUpload" 
-            class="absolute -bottom-2 -right-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-green-400 text-white shadow-md transition hover:scale-110"
-            aria-label="Upload new photo"
-          >
-            <span class="material-symbols-outlined text-xl">edit</span>
-            <input 
-              id="profileUpload" 
-              type="file" 
-              @change="onFileChange" 
-              class="hidden" 
-              accept="image/png, image/jpeg" 
-            />
-          </label>
+  <section class="mx-auto max-w-4xl px-4 py-12">
+    <div class="rounded-2xl bg-white p-8 shadow-md">
+      <header class="flex flex-col items-center gap-3 text-center">
+        <div
+          v-if="profileImage"
+          class="h-24 w-24 overflow-hidden rounded-full border border-gray-200 shadow"
+        >
+          <img :src="profileImage" alt="Profile image" class="h-full w-full object-cover" />
         </div>
+        <div
+          v-else
+          class="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-green-500 text-3xl font-semibold text-white shadow"
+        >
+          {{ currentUser?.firstname?.[0] || currentUser?.username?.[0] || '?' }}
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">{{ currentUser?.firstname }} {{ currentUser?.lastname }}</h1>
+          <p class="text-sm text-gray-500">@{{ currentUser?.username }}</p>
+          <p class="text-sm text-gray-500">{{ currentUser?.email }}</p>
+        </div>
+        <p class="rounded-full bg-gray-100 px-4 py-1 text-sm font-medium text-gray-600">
+          {{ describeRoles(currentUser?.roles) }}
+        </p>
+      </header>
+
+      <div class="mt-8 flex justify-end">
+        <button
+          type="button"
+          @click="logout"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+        >
+          Sign out
+        </button>
       </div>
-
-      <div class="space-y-4">
-        
-        <div>
-          <label for="name" class="mb-2 block text-sm font-medium text-gray-700">
-            Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            v-model="name"
-            :disabled="!isEditing" 
-            :class="[
-              'block w-full rounded-lg border border-gray-300 p-2.5 shadow-sm transition',
-              isEditing 
-                ? 'bg-white text-gray-900 ring-2 ring-blue-300'
-                : 'bg-gray-100 text-gray-500'
-            ]"
-          />
-        </div>
-
-        <div>
-          <label for="nickname" class="mb-2 block text-sm font-medium text-gray-700">
-            Nickname
-          </label>
-          <input
-            type="text"
-            id="nickname"
-            v-model="nickname"
-            :disabled="!isEditing" 
-            :class="[
-              'block w-full rounded-lg border border-gray-300 p-2.5 shadow-sm transition',
-              isEditing 
-                ? 'bg-white text-gray-900 ring-2 ring-blue-300'
-                : 'bg-gray-100 text-gray-500'
-            ]"
-          />
-        </div>
-
-        <div>
-          <label for="email" class="mb-2 block text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            disabled 
-            class="block w-full rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-gray-500 shadow-sm"
-          />
-          <p v-if="!isEditing" class="mt-1 text-xs text-gray-400">
-            (Email can't change)
-          </p>
-        </div>
-
-        <div class="flex items-center justify-end gap-3 pt-4">
-          
-          <button 
-            type="button" 
-            @click="handleEditClick"
-            class="rounded-lg px-6 py-2.5 text-sm font-medium text-white shadow-md transition hover:scale-105"
-            :class="[
-              isEditing 
-                ? 'bg-gradient-to-r from-green-500 to-blue-500' 
-                : 'bg-gradient-to-r from-blue-500 to-green-400' 
-            ]"
-          >
-            {{ isEditing ? 'Save Changes' : 'Edit Profile' }}
-          </button>
-
-          <button 
-            type="button" 
-            @click="handleLogout"
-            class="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-          >
-            Logout
-          </button>
-
-        </div>
-        
-      </div>
-
     </div>
-  </div>
+
+    <div v-if="isAdmin" class="mt-10 rounded-2xl bg-white p-8 shadow-md">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-800">Manage Users</h2>
+        <button
+          type="button"
+          @click="loadUsers"
+          class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div v-if="isLoadingUsers" class="py-10 text-center text-gray-500">Loading users…</div>
+      <div v-else>
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <tr>
+              <th class="px-4 py-3">Name</th>
+              <th class="px-4 py-3">Username</th>
+              <th class="px-4 py-3">Role</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="user in managedUsers" :key="user.id">
+              <td class="px-4 py-3">
+                <span class="font-medium text-gray-800">
+                  {{ user.firstname }} {{ user.lastname }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-gray-600">@{{ user.username }}</td>
+              <td class="px-4 py-3">
+                <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                  {{ describeRoles(user.roles) }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  v-if="user.roles.includes('ROLE_READER')"
+                  type="button"
+                  :disabled="promoteBusy === user.id"
+                  class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  @click="promoteToMember(user.id)"
+                >
+                  <span v-if="promoteBusy === user.id">Updating…</span>
+                  <span v-else>Promote to Member</span>
+                </button>
+                <span v-else class="text-xs text-gray-400">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-if="isAdmin" class="mt-10 space-y-8">
+      <div class="rounded-2xl bg-white p-6 shadow-md">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-gray-800">Removed News</h2>
+          <button
+            type="button"
+            @click="loadRemoved"
+            class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50"
+          >
+            Refresh
+          </button>
+        </div>
+        <div v-if="isLoadingRemoved" class="py-6 text-center text-gray-500">Loading…</div>
+        <div v-else-if="removedNews.length === 0" class="py-6 text-center text-gray-400">
+          No removed news.
+        </div>
+        <ul v-else class="space-y-3">
+          <li
+            v-for="news in removedNews"
+            :key="news.id"
+            class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-semibold text-gray-900">Title: {{ news.title }}</p>
+                <p class="mt-1 text-sm text-gray-700">Reporter: {{ news.reporter }}</p>
+                <p class="mt-1 text-sm text-gray-700">Short Details: {{ news.shortDetail }}</p>
+                <p class="mt-1 text-sm text-gray-500">Status: {{ news.status }}</p>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="rounded-2xl bg-white p-6 shadow-md">
+        <h2 class="mb-4 text-xl font-semibold text-gray-800">Removed Comments</h2>
+        <div v-if="isLoadingRemoved" class="py-6 text-center text-gray-500">Loading…</div>
+        <div v-else-if="removedComments.length === 0" class="py-6 text-center text-gray-400">
+          No removed comments.
+        </div>
+        <ul v-else class="space-y-3">
+          <li
+            v-for="comment in removedComments"
+            :key="comment.id"
+            class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700"
+          >
+            <p class="font-semibold text-gray-900">Author: {{ comment.author }}</p>
+            <p class="mt-1 text-sm text-gray-700">Comment: {{ comment.text }}</p>
+            <p class="mt-1 text-xs text-gray-500">Vote: {{ comment.vote }}</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
 </template>

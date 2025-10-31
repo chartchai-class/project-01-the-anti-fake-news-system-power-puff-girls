@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Pagination from '@/components/AppPagination.vue'
-import { toVote } from '@/router/routes.ts'
+import { toVote } from '@/router'
 import type { NewsItem, CommentItem, NewsStatus } from '@/types'
 import { NP } from '@/plugins/nprogress'
 import NewsService from '@/service/NewsService'
+import { useAuthStore } from '@/stores/auth.ts'
+import { useMessageStore } from '@/stores/message.ts'
 import CommentService from '@/service/CommentService'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const messageStore = useMessageStore()
 const id = Number(route.params.id)
 
 const news = ref<NewsItem | null>(null)
 const comments = ref<CommentItem[]>([])
+const isAdmin = computed(() => authStore.isAdmin)
 
 onMounted(() => {
   if (!Number.isNaN(id)) {
@@ -59,6 +65,31 @@ function onCommentPage(v: number) {
     })
   })
 }
+
+async function removeCurrentNews() {
+  if (!news.value) return
+  try {
+    await NewsService.removeNews(news.value.id)
+    messageStore.updateMessage('News removed successfully.')
+    await router.push({ name: 'home' })
+  } catch (error) {
+    console.error('Failed to remove news', error)
+    messageStore.updateMessage('Could not remove news.')
+  } finally {
+    setTimeout(() => messageStore.resetMessage(), 3000)
+  }
+}
+
+async function removeCommentById(commentId: number) {
+  try {
+    await CommentService.removeComment(commentId)
+    comments.value = comments.value.filter((c) => c.id !== commentId)
+  } catch (error) {
+    console.error('Failed to remove comment', error)
+    messageStore.updateMessage('Could not remove comment.')
+    setTimeout(() => messageStore.resetMessage(), 3000)
+  }
+}
 </script>
 <template>
   <section v-if="news" aria-labelledby="news-detail-heading" class="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen px-4 py-8 rounded-2xl shadow-lg">
@@ -71,7 +102,7 @@ function onCommentPage(v: number) {
       </h2>
     <div class="mt-2 text-sm text-gray-500">
       By <span class="font-medium text-gray-700">{{ news.reporter }}</span>
-      <span class="mx-2">·</span>
+      <span class="mx-2"> • </span>
       <time :datetime="news.reportedAt">{{ new Date(news.reportedAt).toLocaleString() }}</time>
     </div>
   </div>
@@ -92,9 +123,9 @@ function onCommentPage(v: number) {
         {{ derived === 'fake' ? 'Fake' : derived === 'not-fake' ? 'Not Fake' : 'Equal' }}
       </span>
       <span class="text-gray-500">
-        Votes →
+        Votes
         <span class="font-bold text-red-500">Fake: {{ votes.fake }}</span>
-        ·
+        
         <span class="font-bold text-green-500">Not Fake: {{ votes.notFake }}</span>
       </span>
     </div>
@@ -106,8 +137,16 @@ function onCommentPage(v: number) {
 class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 to-green-400 text-white shadow-lg hover:scale-110 hover:from-blue-600 hover:to-green-500 transition-all text-sm"
 >
 
-        Vote / Add Comment →
+        Vote / Add Comment 
       </RouterLink>
+      <button
+        v-if="isAdmin"
+        type="button"
+        class="ml-3 inline-flex items-center rounded-xl border border-red-400 px-3 py-1.5 text-sm font-semibold text-red-500 transition hover:bg-red-500 hover:text-white"
+        @click="removeCurrentNews"
+      >
+        Remove News
+      </button>
     </div>
 
     <ul ref="commentsTop" class="mt-4 space-y-4">
@@ -130,14 +169,24 @@ class="inline-block px-4 py-2 rounded-xl border bg-gradient-to-r from-blue-500 t
       {{ c.vote==='fake' ? 'Voted: Fake' : 'Voted: Not Fake' }}
     </span>
   </div>
-  <a
-    v-if="c.imageURL"
-    :href="c.imageURL"
-    target="_blank"
-    class="mt-2 inline-block text-xs text-blue-600 hover:underline hover:text-blue-800"
-  >
-    Evidence image
-  </a>
+  <div class="mt-3 flex items-center justify-between text-xs">
+    <a
+      v-if="c.imageURL"
+      :href="c.imageURL"
+      target="_blank"
+      class="inline-block text-blue-600 hover:underline hover:text-blue-800"
+    >
+      Evidence image
+    </a>
+    <button
+      v-if="isAdmin"
+      type="button"
+      class="inline-flex items-center rounded-lg border border-red-300 px-2 py-1 text-xs font-semibold text-red-500 transition hover:bg-red-500 hover:text-white"
+      @click="removeCommentById(c.id)"
+    >
+      Remove Comment
+    </button>
+  </div>
 </li>
     </ul>
 

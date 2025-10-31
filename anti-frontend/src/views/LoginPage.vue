@@ -1,54 +1,136 @@
-<script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import { NP } from '@/plugins/nprogress'
+﻿<!-- <script setup lang="ts">
+import { ref } from 'vue'
+import InputText from '@/components/InputText.vue'
 
-const router = useRouter()
-
-// form state
 const username = ref('')
 const password = ref('')
 
-// ui state
+// import { useRouter } from 'vue-router'
+// import { NP } from '@/plugins/nprogress'
+
+// const router = useRouter()
+
+// // form state
+// const username = ref('')
+// const password = ref('')
+
+// // ui state
+// const showPwd = ref(false)
+// const isLoading = ref(false)
+// const showPopup = ref(false)
+
+// // validation
+// const errors = ref<Record<string, string>>({})
+
+// function validate() {
+//   const e: Record<string, string> = {}
+//   if (!username.value.trim()) e.username = 'Required.'
+//   if (!password.value.trim()) e.password = 'Required.'
+//   errors.value = e
+//   return Object.keys(e).length === 0
+// }
+
+// async function submit() {
+//   if (!validate()) return
+//   isLoading.value = true
+//   await nextTick()
+
+//   await NP.track(async () => {
+//     const payload = { username: username.value }
+//     localStorage.setItem('demo.login.payload', JSON.stringify(payload))
+//     await new Promise(r => setTimeout(r, 500))
+//   })
+
+//   isLoading.value = false
+//   showPopup.value = true
+//   setTimeout(async () => {
+//     showPopup.value = false
+//     await router.push({ name: 'home' })
+//   }, 1200)
+// }
+</script> -->
+
+<script setup lang="ts">
+import InputText from '@/components/InputText.vue'
+import { ref } from 'vue'
+import * as yup from 'yup'
+import { useField, useForm } from 'vee-validate'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useMessageStore } from '@/stores/message'
+
+// Initialize stores and router
+const authStore = useAuthStore()
+const messageStore = useMessageStore()
+const router = useRouter()
+
+const validationSchema = yup.object({
+  user: yup.string().required('The username is required'),
+  password: yup.string().required('The password is required')
+})
+
+const { errors, handleSubmit } = useForm({
+  validationSchema,
+  initialValues: { user: '', password: '' }
+})
+
+// REFACTORED: Renamed variables for simplicity (formuser -> user)
+const { value: user } = useField<string>('user')
+const { value: password } = useField<string>('password')
+
+// UI state
 const showPwd = ref(false)
 const isLoading = ref(false)
 const showPopup = ref(false)
 
-// validation
-const errors = ref<Record<string, string>>({})
-
-function validate() {
-  const e: Record<string, string> = {}
-  if (!username.value.trim()) e.username = 'Required.'
-  if (!password.value.trim()) e.password = 'Required.'
-  errors.value = e
-  return Object.keys(e).length === 0
-}
-
-async function submit() {
-  if (!validate()) return
+// Submission Handler
+const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true
-  await nextTick()
-
-  await NP.track(async () => {
-    const payload = { username: username.value }
-    localStorage.setItem('demo.login.payload', JSON.stringify(payload))
-    await new Promise(r => setTimeout(r, 500))
-  })
-
-  isLoading.value = false
-  showPopup.value = true
-  setTimeout(async () => {
-    showPopup.value = false
-    await router.push({ name: 'home' })
-  }, 1200)
-}
+  try {
+    await authStore.login(values.user, values.password)
+    showPopup.value = true
+    setTimeout(() => router.push({ name: 'home' }), 800)
+  } catch (e) {
+    messageStore.updateMessage('could not login')
+    setTimeout(() => messageStore.updateMessage(''), 3000)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
+
+<!-- <template>
+  <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+    <form class="space-y-6" @submit.prevent="onSubmit">
+      <div>
+        <label for="user" class="block text-sm font-medium leading-6 text-gray-900">Username</label>
+        <InputText type="text" v-model="user" placeholder="Enter username (e.g., admin)" :error="errors['user']" />
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between">
+          <label for="password" class="block text-sm font-medium leading-6 text-gray-900">Password</label>
+          <div class="text-sm">
+            <a href="#" class="font-semibold text-indigo-600 hover:text-indigo-500">Forgot password?</a>
+          </div>
+        </div>
+        <InputText type="password" v-model="password" placeholder="Enter password (e.g., admin)" :error="errors['password']" />
+      </div>
+
+      <div>
+        <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+          Sign in
+        </button>
+      </div>
+    </form>
+  </div>
+</template> -->
+
+
 
 <template>
 <section class="flex justify-center py-20 px-4 min-h-[70vh]">
     <div class="w-full max-w-md">
-      <!-- Profile Icon -->
 <div class="flex justify-center mb-4">
   <div
     class="w-20 h-20 rounded-full bg-white-200 flex items-center justify-center text-gray-600 shadow-md hover:scale-105 transition-transform"
@@ -70,7 +152,6 @@ async function submit() {
   </div>
 </div>
 
-      <!-- Heading -->
       <h2
         class="text-3xl font-extrabold text-center
                bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent"
@@ -81,42 +162,21 @@ async function submit() {
         Welcome back to SocialFact. Please enter your credentials.
       </p>
 
-      <!-- Card -->
       <form
         class="mt-6 space-y-4 bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
-        @submit.prevent="submit"
+        @submit.prevent="onSubmit"
         novalidate
       >
-        <!-- Username -->
         <div>
           <label class="block text-sm font-medium" for="username">Username</label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            autocomplete="username"
-            placeholder="Enter your username"
-            class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
-                   focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-            :aria-invalid="!!errors.username"
-          />
-          <p v-if="errors.username" class="mt-1 text-xs text-red-600">{{ errors.username }}</p>
+        <InputText type="text" v-model="user" placeholder="Enter username (e.g., admin)" :error="errors['user']" />
+          
         </div>
 
-        <!-- Password -->
         <div>
           <label class="block text-sm font-medium" for="password">Password</label>
           <div class="mt-2 relative">
-            <input
-              id="password"
-              v-model="password"
-              :type="showPwd ? 'text' : 'password'"
-              autocomplete="current-password"
-              placeholder="Enter your password"
-              class="w-full border rounded-xl p-2 pr-24 placeholder:text-gray-400
-                     focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-              :aria-invalid="!!errors.password"
-            />
+            <InputText :type="showPwd ? 'text' : 'password'" v-model="password" placeholder="Enter password (e.g., admin)" :error="errors['password']" />
             <button
               type="button"
               class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-xs rounded-lg
@@ -129,7 +189,6 @@ async function submit() {
           <p v-if="errors.password" class="mt-1 text-xs text-red-600">{{ errors.password }}</p>
         </div>
 
-        <!-- Actions -->
          <div class="pt-2 flex flex-col items-center gap-3 justify-center">
         <button
          :disabled="isLoading"
@@ -151,7 +210,7 @@ async function submit() {
      </button>
 
 <p class="text-sm text-gray-400 text-center">
-  Don’t have an account?
+  Don't have an account?
   <RouterLink
     :to="{ name: 'register' }"
     class="font-semibold text-gray-700 hover:text-red-600 hover:underline transition"
@@ -162,8 +221,6 @@ async function submit() {
 
     </div>
 
-
-        <!-- Popup -->
         <Transition
           enter-active-class="transition duration-200 ease-out"
           enter-from-class="opacity-0 scale-95"
@@ -189,3 +246,6 @@ async function submit() {
     </div>
   </section>
 </template>
+
+
+

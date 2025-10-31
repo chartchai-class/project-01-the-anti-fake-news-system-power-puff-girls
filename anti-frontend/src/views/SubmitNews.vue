@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router'
 import type { CreateNewsPayload } from '@/types'
 import NewsService from '@/service/NewsService'
 import ImageUpload from '@/components/ImageUpload.vue'
-import { toNewsDetail } from '@/router/routes'
-
+import { toNewsDetail } from '@/router/index'
+import { useAuthStore } from '@/stores/auth'
 
 const news = reactive<CreateNewsPayload>({
   title: '',
@@ -18,6 +18,8 @@ const news = reactive<CreateNewsPayload>({
 })
 
 const router = useRouter()
+const authStore = useAuthStore()
+const canSubmit = computed(() => authStore.canSubmitNews)
 const imageModel = computed({
   get: () => (news.imageURL ? [news.imageURL] : []),
   set: (newValue: string[]) => {
@@ -30,7 +32,7 @@ const showPopup = ref(false)
 const submitError = ref<string | null>(null)
 
 async function submit() {
-  if (isLoading.value) return
+  if (!canSubmit.value || isLoading.value) return
   isLoading.value = true
   submitError.value = null
 
@@ -52,7 +54,7 @@ async function submit() {
       router.push(toNewsDetail(data.id))
     }, 1200)
   } catch (error) {
-    submitError.value = 'Unable to submit news right now. Please try again.'
+    submitError.value = 'Unable to submit news right now. Please try again.' + error
   } finally {
     isLoading.value = false
   }
@@ -69,12 +71,22 @@ async function submit() {
         Submit News/Article
       </h2>
       <p class="text-sm text-gray-600 mt-1 text-center">
-        Your news matters. Letโ€s fact-check, vote, and discuss.
+        Your news matters. Let's fact-check, vote, and discuss.
       </p>
-<form
-  class="mt-6 space-y-4 bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
-  @submit.prevent="submit"
->
+
+      <div
+        v-if="!canSubmit"
+        class="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-center text-amber-800"
+      >
+        <p class="font-semibold">You need to be a verified member to submit news.</p>
+        <p class="mt-2 text-sm">Please contact an administrator to upgrade your account.</p>
+      </div>
+
+      <form
+        v-else
+        class="mt-6 space-y-4 bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
+        @submit.prevent="submit"
+      >
   <!-- Title -->
   <div>
     <label class="block text-sm font-medium">Title</label>
@@ -82,7 +94,7 @@ async function submit() {
       v-model="news.title"
       type="text"
       required
-      placeholder="Write a clear, specific headlineโ€ฆ"
+      placeholder="Write a clear, specific headline…"
       class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
              focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
     />
@@ -96,11 +108,11 @@ async function submit() {
       v-model="news.shortDetail"
       rows="2"
       required
-      placeholder="A quick summary (what/when/where)โ€ฆ"
+      placeholder="A quick summary (what/when/where)…"
       class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
              focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
     />
-    <p class="mt-1 text-xs text-gray-500">Tip: Keep it concise (1โ€“2 sentences).</p>
+    <p class="mt-1 text-xs text-gray-500">Tip: Keep it concise (1–2 sentences).</p>
   </div>
 
   <!-- Full detail -->
@@ -110,12 +122,12 @@ async function submit() {
       v-model="news.fullDetail"
       rows="6"
       required
-      placeholder="Provide evidence, links, sources, and contextโ€ฆ"
+      placeholder="Provide evidence, links, sources, and context…"
       class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400
              focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
     />
     <p class="mt-1 text-xs text-gray-500">
-      Tip: Add 2โ€“3 verification points with links or screenshots.
+      Tip: Add 2–3 verification points with links or screenshots.
     </p>
   </div>
 
@@ -162,7 +174,7 @@ async function submit() {
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
       </svg>
-      Processingโ€ฆ
+      Processing…
     </span>
   </button>
   <RouterLink
@@ -195,7 +207,7 @@ async function submit() {
     </div>
   </div>
 </Transition>
-</form>
+      </form>
     </div>
   </section>
 </template>

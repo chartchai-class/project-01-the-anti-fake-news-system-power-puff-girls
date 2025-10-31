@@ -1,63 +1,61 @@
-<script setup lang="ts">
-import { ref, nextTick } from 'vue'
+﻿<script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { NP } from '@/plugins/nprogress'
+import * as yup from 'yup'
+import { useForm, useField } from 'vee-validate'
+import { useAuthStore } from '@/stores/auth'
+import { useMessageStore } from '@/stores/message'
+import InputText from '@/components/InputText.vue'
+import ImageUpload from '@/components/ImageUpload.vue'
 
+const authStore = useAuthStore()
+const messageStore = useMessageStore()
 const router = useRouter()
 
-// form state
-const firstname = ref('')
-const lastname  = ref('')
-const username  = ref('')
-const email     = ref('')
-const password  = ref('')
-
-// ui state
-const showPwd   = ref(false)
+const showPwd = ref(false)
 const isLoading = ref(false)
 const showPopup = ref(false)
 
-// simple validation
-const errors = ref<Record<string, string>>({})
+const validationSchema = yup.object({
+  firstname: yup.string().required('First name is required'),
+  lastname: yup.string().required('Last name is required'),
+  username: yup.string().required().min(4, 'Username must be at least 4 characters'),
+  email: yup.string().required().email(),
+  password: yup.string().required().min(4, 'Password must be at least 4 characters')
+})
 
-const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
-const isStrong = (v: string) => v.length >= 8
+const { errors, handleSubmit } = useForm({ validationSchema })
 
-function validate() {
-  const e: Record<string, string> = {}
-  if (!firstname.value.trim()) e.firstname = 'Required.'
-  if (!lastname.value.trim())  e.lastname  = 'Required.'
-  if (!username.value.trim())  e.username  = 'Required.'
-  if (!isEmail(email.value))    e.email     = 'Enter a valid email.'
-  if (!isStrong(password.value)) e.password = 'At least 8 characters.'
-  errors.value = e
-  return Object.keys(e).length === 0
-}
+const { value: firstname } = useField<string>('firstname')
+const { value: lastname } = useField<string>('lastname')
+const { value: username } = useField<string>('username')
+const { value: email } = useField<string>('email')
+const { value: password } = useField<string>('password')
+const profileImage = ref<string[]>([])
 
-
-async function submit() {
-  if (!validate()) return
+const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true
-  await nextTick()
-
-  await NP.track(async () => {
-    const payload = {
-      firstname: firstname.value,
-      lastname:  lastname.value,
-      username:  username.value,
-      email:     email.value,
-    }
-    localStorage.setItem('demo.register.payload', JSON.stringify(payload))
-    await new Promise(r => setTimeout(r, 500))
-  })
-
-  isLoading.value = false
-  showPopup.value = true
-  setTimeout(async () => {
-    showPopup.value = false
-    await router.push({ name: 'home' })
-  }, 1200)
-}
+  try {
+    await authStore.register(
+      values.firstname,
+      values.lastname,
+      values.username,
+      values.email,
+      values.password,
+      profileImage.value[0] ?? null
+    )
+    messageStore.updateMessage(`Welcome, ${values.firstname}!`)
+    setTimeout(() => messageStore.resetMessage(), 3000)
+    showPopup.value = true
+    setTimeout(() => router.push({ name: 'home' }), 800)
+  } catch (err) {
+    console.error('Registration error:', err)
+    messageStore.updateMessage('Could not register. Please try again.')
+    setTimeout(() => messageStore.resetMessage(), 3000)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <template>
@@ -77,32 +75,20 @@ async function submit() {
       <!-- Card -->
       <form
         class="mt-6 space-y-4 bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
-        @submit.prevent="submit"
+        @submit.prevent="onSubmit"
         novalidate
       >
         <!-- Name -->
         <div class="grid grid-cols-1 md:grid-cols-2 md:gap-4">
           <div>
             <label class="block text-sm font-medium" for="firstname">First name</label>
-            <input
-              id="firstname"
-              v-model="firstname"
-              type="text"
-              placeholder="e.g., Jane"
-              class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-            />
+            <InputText type="text" v-model="firstname" :error="errors.firstname" />
             <p v-if="errors.firstname" class="mt-1 text-xs text-red-600">{{ errors.firstname }}</p>
           </div>
 
           <div>
             <label class="block text-sm font-medium" for="lastname">Last name</label>
-            <input
-              id="lastname"
-              v-model="lastname"
-              type="text"
-              placeholder="e.g., Doe"
-              class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-            />
+            <InputText type="text" v-model="lastname" :error="errors.lastname" />
             <p v-if="errors.lastname" class="mt-1 text-xs text-red-600">{{ errors.lastname }}</p>
           </div>
         </div>
@@ -110,41 +96,30 @@ async function submit() {
         <!-- Username -->
         <div>
           <label class="block text-sm font-medium" for="username">Username</label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            placeholder="Choose a unique username"
-            class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-          />
+          <InputText type="text" v-model="username" :error="errors.username" />
           <p v-if="errors.username" class="mt-1 text-xs text-red-600">{{ errors.username }}</p>
         </div>
 
         <!-- Email -->
         <div>
           <label class="block text-sm font-medium" for="email">Email</label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="you@example.com"
-            class="mt-2 w-full border rounded-xl p-2 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-          />
-          <p id="email-hint" class="mt-1 text-xs text-gray-500">We’ll send a verification link.</p>
+          <InputText type="email" v-model="email" :error="errors.email" />
+          <p id="email-hint" class="mt-1 text-xs text-gray-500">We'll send a verification link.</p>
           <p v-if="errors.email" class="mt-1 text-xs text-red-600">{{ errors.email }}</p>
+        </div>
+
+        <!-- Profile image -->
+        <div>
+          <label class="block text-sm font-medium" for="profileImage">Profile image (optional)</label>
+          <ImageUpload v-model="profileImage" />
+          <p class="mt-1 text-xs text-gray-500">Recommended 1:1 aspect ratio. Leave empty to use initials.</p>
         </div>
 
         <!-- Password -->
         <div>
           <label class="block text-sm font-medium" for="password">Password</label>
-          <div class="mt-2 relative">
-            <input
-              id="password"
-              v-model="password"
-              :type="showPwd ? 'text' : 'password'"
-              placeholder="At least 8 characters"
-              class="w-full border rounded-xl p-2 pr-24 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-            />
+          <div class="relative mt-2">
+            <InputText :type="showPwd ? 'text' : 'password'" v-model="password" :error="errors['password']" />
             <button
               type="button"
               class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-xs rounded-lg border bg-white hover:bg-gray-50 transition"
